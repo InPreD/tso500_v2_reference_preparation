@@ -2,6 +2,52 @@
 import argparse
 import logging
 import math
+from typing import Dict, List
+
+# extend given region based on
+# 1) the supplied coverage profiles (here reduced to the number of samples with 'high-enough' coverage at the relevant positions)
+# 2) the required number of samples with 'high-enough' coverage in the extension areas 
+# 3) the selected extension limit
+def extend_region(chrom: str, start: int, end: int, relevant_position_dict: Dict[int, int], max_extension: int, coverage_threshold: int) -> List[str]:
+
+    # initiate the start and end values for the extended region
+    new_start = start
+    new_end = end
+
+    # determine how far the start position can be shifted without an unacceptable coverage drop across the coverage profiles
+    # note: start positions are considered to be inside the BED region
+    for shift in range(1, max_extension + 1):
+        test_start = start - shift
+        if test_start in relevant_position_dict:
+            covered_samples = relevant_position_dict[test_start]
+
+            if (covered_samples >= coverage_threshold):
+                new_start = test_start
+            # stop extending in case of a coverage drop
+            else:
+                break
+        # stop if there is no data available for the tested position
+        else:
+            break
+
+    # determine how far the end position can be shifted without an unacceptable coverage drop across the coverage profiles
+    # note: end positions are considered to be outside the BED region
+    for shift in range(0, max_extension):
+        test_end = end + shift
+        if test_end in relevant_position_dict:
+            covered_samples = relevant_position_dict[test_end]
+
+            if (covered_samples >= coverage_threshold):
+                new_end = test_end + 1
+            # stop extending in case of a coverage drop
+            else:
+                break
+        # stop if there is no data available for the tested position
+        else:
+            break
+
+    # return the extended region as a List of str elements
+    return([chrom, f"{new_start}", f"{new_end}"])
 
 # Set up logging. The logging level is set to INFO, and the log messages will include the timestamp, log level, and message.
 logging.basicConfig(
@@ -11,12 +57,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Daniel Vodak
-version_string = "1.0.0:26-08-14"
-
-# To do?
+# To do:
 # - Make sure that region starts and ends don't get outside the chromosome bounds
 #   (not happening with our modest extensions of exonic targets, but could be an issue for more general use).
+# - Allow supplying coverage files via a text file with paths.
 
 arg_parser = argparse.ArgumentParser(
   description="Expand input BED regions in both directions. "
@@ -25,9 +69,6 @@ arg_parser = argparse.ArgumentParser(
               "(these are represented by their coverage profiles). "
               "(Specified male and female sample counts are utilized instead of total sample counts "
               "for coverage considerations during expansion of regions on Y and X chromosomes.)")
-
-arg_parser.add_argument("-v", "--version", action="version",
-                        version="%(prog)s " + version_string)
 
 arg_parser.add_argument("--input_targets_bed", required=True,
                         help="path to the input BED file")
@@ -47,6 +88,8 @@ arg_parser.add_argument("--male_sample_count", type=int, required=True,
                         help="number of male patient samples")
 arg_parser.add_argument("--female_sample_count", type=int, required=True,
                         help="number of female patient samples")
+arg_parser.add_argument("--output_name_column", type=bool, default=True,
+                        help="whether the name column should be included in the output")
 
 arg_dict = vars(arg_parser.parse_args())
 
@@ -58,48 +101,68 @@ max_extension = arg_dict["max_extension"]
 sample_fraction = arg_dict["sample_fraction"]
 male_sample_count = arg_dict["male_sample_count"]
 female_sample_count = arg_dict["female_sample_count"]
+output_name_column = arg_dict["output_name_column"]
 
 total_sample_count = len(coverage_tsv_list)
 
-logger.info("Number of input coverage files/number of considered samples: {}".format(total_sample_count))
+logger.info("BED region extension initiated.")
+logger.info(f"Number of input coverage files/number of considered samples: {total_sample_count}")
 
 # Check selected parameter values. In case of unreasonable values, exit with a helpful message.
 if ((male_sample_count + female_sample_count) != total_sample_count):
-  logger.error("The total sample count ({}) does not equal the sum of specified"
-               " male sample count ({}) and female sample count ({}) values. Exiting.".format(total_sample_count, male_sample_count, female_sample_count))
+  logger.error(f"The total sample count ({total_sample_count}) does not equal the sum of specified"
+               " male sample count ({male_sample_count}) and female sample count ({female_sample_count}) values. Exiting.")
   exit(1)
 
 if ((sample_fraction < 0.1) or (sample_fraction > 1.0)):
-  logger.error("Please specify a \"sample_fraction\" between 0.1 and 1. Exiting.")
+  logger.error("Please specify a \"sample_fraction\" parameter value between 0.1 and 1. Exiting.")
   exit(2)
 
+if ((min_depth < 10) or (max_extension < 10)):
+  logger.error("Please specify \"min_depth\" and \"max_extension\" parameter values larger than 9. Exiting.")
+  exit(3)
+
+# determine how many samples with high-enough coverage (depth >= min_depth) at given position
+# will be required for including that position in the extended regions (the output)
+# - autosomes, chrX and chrY have all their own threshold values
 min_covered_auto = math.ceil(sample_fraction * total_sample_count)
 min_covered_chrX = math.ceil(sample_fraction * female_sample_count)
 min_covered_chrY = math.ceil(sample_fraction * male_sample_count)
 
-logger.info("Minimum required number of covering samples (number of samples with read depth >= {} at given position):"
-            " {} samples for autosome regions; {} samples for chrX regions; {} samples for chrY regions.".format(min_depth, min_covered_auto, min_covered_chrX, min_covered_chrY))
+logger.info(f"Minimum required number of covering samples (number of samples with read depth >= {min_depth} at given position):"
+            " {min_covered_auto} samples for autosome regions; {min_covered_chrX} samples for chrX regions; {min_covered_chrY} samples for chrY regions.")
 
+# variables for holding the input data
 original_targets = []
-position_to_coverages = {}
+position_to_covered_samples = {}
 
 # load the input target data
 with open(input_targets, "r") as original_regions_file:
     for line in original_regions_file:
         line_s = line.strip().split("\t")
 
-        # convert the start and end coordinates to integers
-        region_entry = [line_s[0], int(line_s[1]), int(line_s[2]), line_s[3]]
+        # skip incomplete input BED regions, issue a warning for each
+        line_element_count = len(line_s)
+        if (line_element_count < 3):
+            logger.warning(f"Too few columns/fields on the following input BED file line (\"{line_s}\"). The line will be skipped.")
+            continue
 
+        # determine target name; construct a new name if there is none available on input
+        target_name = f"region_{len(original_targets) + 1}"
+        if (line_element_count > 3):
+            target_name = line_s[3]
+
+        # construct a region record
+        region_entry = [line_s[0], line_s[1], line_s[2], target_name]
         original_targets.append(region_entry)
 
-logger.info("Number of input target regions: " + str(len(original_targets)))
+logger.info(f"Number of input target regions: {len(original_targets)}")
 
 # load the input coverage data
-counter = 0
+file_counter = 0
 for coverage_tsv in coverage_tsv_list:
-    counter += 1
-    logger.info("Processing coverage file #" + str(counter) + "/" + str(len(coverage_tsv_list)) + "..")
+    file_counter += 1
+    logger.info(f"Processing coverage file #{file_counter}/{len(coverage_tsv_list)}..")
     with open(coverage_tsv, "r") as coverage_file:
         for line in coverage_file:
             line_s = line.strip().split("\t")
@@ -108,76 +171,53 @@ for coverage_tsv in coverage_tsv_list:
             pos = int(line_s[1]) + int(line_s[3]) - 1
             cov = int(line_s[4])
 
-            if chr not in position_to_coverages:
-                position_to_coverages[chr] = {}
-            if pos not in position_to_coverages[chr]:
-                position_to_coverages[chr][pos] = []
-            position_to_coverages[chr][pos].append(cov)
+            if (cov >= min_depth):
+                if chr not in position_to_covered_samples:
+                    position_to_covered_samples[chr] = {}
+                if pos not in position_to_covered_samples[chr]:
+                    position_to_covered_samples[chr][pos] = 1
+                else:
+                    position_to_covered_samples[chr][pos] += 1
 
 # expand each input target based on the supplied coverage data
 # write the expanded targets into the output file
-with open(output_targets, "w") as grown_file:
-    counter = 0
+region_count = 0
+with open(output_targets, "w") as output_file:
     for original_target in original_targets:
-        counter += 1
-        logger.info("Processing target #" + str(counter) + "/" + str(len(original_targets)) + "..")
+        region_count += 1
+        logger.info(f"Processing target #{region_count}/{len(original_targets)}..")
 
         # parse the original target information
         chrom = original_target[0]
-        start = original_target[1]
-        end = original_target[2]
+        start = int(original_target[1])
+        end = int(original_target[2])
         name = original_target[3]
 
         # skip targets located on chromosomes not mentioned in the input coverage files - issue a warning for each target
-        if (chrom not in position_to_coverages):
-            logger.warning("Target chromosome is not reflected in the supplied coverage files. The following target will be skipped: ".format(":".join(original_target)))
+        if (chrom not in position_to_covered_samples):
+            logger.warning(f"The following target will be skipped, as its chromosome is not reflected in the supplied coverage files: {':'.join(original_target)}")
             continue
 
-        # initiate the start and end values for the extended target
-        new_start = start
-        new_end = end
+        # select the correct coverage threshold based on the chromosome
+        coverage_threshold = min_covered_auto
+        if (chrom == "chrX"):
+            coverage_threshold = min_covered_chrX
+        elif(chrom == "chrY"):
+            coverage_threshold = min_covered_chrY
 
-        # determine how far the start position can be shifted without the coverage dropping below the specified threshold
-        # note: start positions are considered to be inside the BED region
-        for shift in range(1, max_extension + 1):
-            test_start = start - shift
-            if test_start in position_to_coverages[chrom]:
-                coverages = position_to_coverages[chrom][test_start]
-                covered_samples = len([coval for coval in coverages if coval >= min_depth])
+        # extract only the relevant parts of the 'position_to_covered_samples' dictionary
+        # (only data for the positions that might be queried in the subsequent extension process for given region)
+        relevant_position_list = [pos for pos in position_to_covered_samples[chrom] if (start - max_extension) <= pos <= (end + max_extension - 1)]
+        relevant_position_dict = {pos: position_to_covered_samples[chrom][pos] for pos in relevant_position_list}
 
-                if ((chrom == "chrX") and (covered_samples >= min_covered_chrX)):
-                    new_start = test_start
-                elif ((chrom == "chrY") and (covered_samples >= min_covered_chrY)):
-                    new_start = test_start
-                elif ((chrom not in ["chrX", "chrY"]) and (covered_samples >= min_covered_auto)):
-                    new_start = test_start
-                # stop extending in case of coverage drop
-                else:
-                    break
-            # stop if there is no data available for the tested position
-            else:
-                break
+        # extend the input region
+        extended_region = extend_region(chrom, start, end, relevant_position_dict, max_extension, coverage_threshold)
 
-        # determine how far the end position can be shifted without the coverage dropping below the specified threshold
-        # note: end positions are considered to be outside the BED region
-        for shift in range(0, max_extension):
-            test_end = end + shift
-            if test_end in position_to_coverages[chrom]:
-                coverages = position_to_coverages[chrom][test_end]
-                covered_samples = len([coval for coval in coverages if coval >= min_depth])
+        output_line = extended_region
+        if output_name_column:
+            output_line += [f"{name}|extended"]
 
-                if ((chrom == "chrX") and (covered_samples >= min_covered_chrX)):
-                    new_end = test_end + 1
-                elif ((chrom == "chrY") and (covered_samples >= min_covered_chrY)):
-                    new_end = test_end + 1
-                elif ((chrom not in ["chrX", "chrY"]) and (covered_samples >= min_covered_auto)):
-                    new_end = test_end + 1
-                # stop extending in case of coverage drop
-                else:
-                    break
-            # stop if there is no data available for the tested position
-            else:
-                break
+        output_file.write("\t".join(output_line) + "\n")
 
-        # output the adjusted target
-        grown_file.write("\t".join([chrom, str(new_start), str(new_end), name + "_grown"]) + "\n")
+logger.info("BED region extension done.")
+logger.info(f"Number of processed regions: {region_count}")
