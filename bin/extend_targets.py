@@ -111,17 +111,17 @@ def main():
 
     # Check selected parameter values. In case of unreasonable values, exit with a helpful message.
     if ((male_sample_count + female_sample_count) != total_sample_count):
-       logger.error(f"The total sample count ({total_sample_count}) does not equal the sum of specified"
-                " male sample count ({male_sample_count}) and female sample count ({female_sample_count}) values. Exiting.")
-    exit(1)
+        logger.error(f"The total sample count ({total_sample_count}) does not equal the sum of specified"
+                      " male sample count ({male_sample_count}) and female sample count ({female_sample_count}) values. Exiting.")
+        exit(1)
 
     if ((sample_fraction < 0.1) or (sample_fraction > 1.0)):
         logger.error("Please specify a \"sample_fraction\" parameter value between 0.1 and 1. Exiting.")
-    exit(2)
+        exit(2)
 
     if ((min_depth < 10) or (max_extension < 10)):
         logger.error("Please specify \"min_depth\" and \"max_extension\" parameter values larger than 9. Exiting.")
-    exit(3)
+        exit(3)
 
     # determine how many samples with high-enough coverage (depth >= min_depth) at given position
     # will be required for including that position in the extended regions (the output)
