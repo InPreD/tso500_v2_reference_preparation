@@ -38,7 +38,7 @@ workflow INPRED_TSO500_V2_REFERENCE_PREPARATION {
     TSO500_V2_REFERENCE_PREPARATION (
         samplesheet,
         params.panel_bed,
-        params.chromosome_size_tsv,
+        params.reference_fai,
         params.outdir,
     )
 }
