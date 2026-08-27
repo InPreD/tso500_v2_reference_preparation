@@ -8,8 +8,9 @@ include { BEDTOOLS_COVERAGE      } from '../modules/nf-core/bedtools/coverage'
 include { BEDTOOLS_MERGE         } from '../modules/nf-core/bedtools/merge'
 include { BEDTOOLS_SLOP          } from '../modules/nf-core/bedtools/slop'
 include { BEDTOOLS_SUBTRACT      } from '../modules/nf-core/bedtools/subtract'
-include { SORT as SORT_BED       } from '../modules/local/sort/main'
-include { SORT as SORT_SUBTRACT  } from '../modules/local/sort/main'
+include { FAI_TO_CHR_SIZES       } from '../modules/local/fai_to_chr_sizes'
+include { SORT as SORT_BED       } from '../modules/local/sort'
+include { SORT as SORT_SUBTRACT  } from '../modules/local/sort'
 include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 
@@ -24,12 +25,18 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     take:
     ch_samplesheet // channel: samplesheet read in from --input
     panel_bed
-    chromosome_size_tsv
+    reference_fai
     outdir
 
     main:
 
     def ch_versions = channel.empty()
+    //
+    // MODULE: Run fai to chromosome sizes
+    //
+    ch_fai_to_chr_sizes_input = channel.fromPath(reference_fai).map{ fai -> [ [ id: fai.simpleName ], fai ] }.view()
+    FAI_TO_CHR_SIZES(ch_fai_to_chr_sizes_input)
+
     //
     // MODULE: Run sort
     //
@@ -40,7 +47,7 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     // MODULE: Run bedtools/slop
     //
     ch_bedtools_slop_input = SORT_BED.out.bed.map{ meta, bed -> [ [ id: meta.id + '_slop' ], bed ] }
-    BEDTOOLS_SLOP(ch_bedtools_slop_input, channel.fromPath(chromosome_size_tsv))
+    BEDTOOLS_SLOP(ch_bedtools_slop_input, FAI_TO_CHR_SIZES.out.tsv)
 
     //
     // MODULE: Run bedtools/subtract
@@ -68,7 +75,7 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     // MODULE: Run bedtools/coverage
     //
     ch_bedtools_coverage_input = BEDTOOLS_BAMTOBED.out.bed.combine(BEDTOOLS_MERGE.out.bed).map{ meta1, bed1, meta2, bed2 -> [ [ id: meta1.id + '_' + meta2.id ], bed2, bed1 ] }
-    BEDTOOLS_COVERAGE(ch_bedtools_coverage_input, channel.fromPath(chromosome_size_tsv))
+    BEDTOOLS_COVERAGE(ch_bedtools_coverage_input, FAI_TO_CHR_SIZES.out.tsv)
 
     //
     // Collate and save software versions

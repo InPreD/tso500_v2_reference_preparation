@@ -10,7 +10,7 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": ["input", "panel_bed", "outdir"],
+            "required": ["input", "panel_bed", "reference_fai", "outdir"],
             "properties": {
                 "input": {
                     "type": "string",
@@ -31,16 +31,6 @@
                     "help_text": "Defines the limit for the extension of target regions.",
                     "fa_icon": "fas fa-input-numeric"
                 },
-                "chromosome_size_tsv": {
-                    "type": "string",
-                    "format": "file-path",
-                    "exists": true,
-                    "mimetype": "text/tsv",
-                    "pattern": "^\\S+\\.tsv$",
-                    "description": "Path to bed file containing all chromosome sizes.",
-                    "help_text": "This file is obtained from the provider of the panel (e.g. illumina).",
-                    "fa_icon": "fas fa-file-tsv"
-                },
                 "panel_bed": {
                     "type": "string",
                     "format": "file-path",
@@ -49,6 +39,16 @@
                     "pattern": "^\\S+\\.bed$",
                     "description": "Path to bed file containing all panel target regions.",
                     "help_text": "This file is obtained from the provider of the panel (e.g. illumina).",
+                    "fa_icon": "fas fa-file"
+                },
+                "reference_fai": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "pattern": "^\\S+\\.fai$",
+                    "description": "Path to .fai file for reference used in alignment.",
+                    "help_text": "A fasta index file can be created by running samtools faidx on a reference fasta file.",
                     "fa_icon": "fas fa-file"
                 },
                 "outdir": {
