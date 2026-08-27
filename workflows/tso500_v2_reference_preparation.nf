@@ -11,6 +11,7 @@ include { BEDTOOLS_SUBTRACT      } from '../modules/nf-core/bedtools/subtract'
 include { FAI_TO_CHR_SIZES       } from '../modules/local/fai_to_chr_sizes'
 include { SORT as SORT_BED       } from '../modules/local/sort'
 include { SORT as SORT_SUBTRACT  } from '../modules/local/sort'
+include { SORT as SORT_BAMTOBED  } from '../modules/local/sort'
 include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 
@@ -72,9 +73,14 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     BEDTOOLS_BAMTOBED(ch_samplesheet)
 
     //
+    // MODULE: Run sort
+    //
+    SORT_BAMTOBED(BEDTOOLS_BAMTOBED.out.bed)
+
+    //
     // MODULE: Run bedtools/coverage
     //
-    ch_bedtools_coverage_input = BEDTOOLS_BAMTOBED.out.bed.combine(BEDTOOLS_MERGE.out.bed).map{ meta1, bed1, meta2, bed2 -> [ [ id: meta1.id + '_' + meta2.id ], bed2, bed1 ] }
+    ch_bedtools_coverage_input = SORT_BAMTOBED.out.bed.combine(BEDTOOLS_MERGE.out.bed).map{ meta1, bed1, meta2, bed2 -> [ [ id: meta1.id + '_' + meta2.id ], bed2, bed1 ] }
     BEDTOOLS_COVERAGE(ch_bedtools_coverage_input, FAI_TO_CHR_SIZES.out.tsv)
 
     //
