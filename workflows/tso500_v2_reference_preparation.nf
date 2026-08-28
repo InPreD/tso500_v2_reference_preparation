@@ -35,7 +35,7 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     //
     // MODULE: Run fai to chromosome sizes
     //
-    ch_fai_to_chr_sizes_input = channel.fromPath(reference_fai).map{ fai -> [ [ id: fai.simpleName ], fai ] }.view()
+    ch_fai_to_chr_sizes_input = channel.fromPath(reference_fai).map{ fai -> [ [ id: fai.simpleName ], fai ] }
     FAI_TO_CHR_SIZES(ch_fai_to_chr_sizes_input)
 
     //
@@ -81,7 +81,7 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     // MODULE: Run bedtools/coverage
     //
     ch_bedtools_coverage_input = SORT_BAMTOBED.out.bed.combine(BEDTOOLS_MERGE.out.bed).map{ meta1, bed1, meta2, bed2 -> [ [ id: meta1.id + '_' + meta2.id ], bed2, bed1 ] }
-    BEDTOOLS_COVERAGE(ch_bedtools_coverage_input, FAI_TO_CHR_SIZES.out.tsv)
+    BEDTOOLS_COVERAGE(ch_bedtools_coverage_input, FAI_TO_CHR_SIZES.out.sorted_tsv)
 
     //
     // Collate and save software versions
