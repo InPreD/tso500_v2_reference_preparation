@@ -1,6 +1,6 @@
 from pytest import mark
 
-from .extend_targets import extend_region
+from ..extend_targets import extend_region
 
 #extend_region(chrom: str, start: int, end: int, relevant_position_dict: Dict[int, int], max_extension: int, coverage_threshold: int) -> List[str]
 

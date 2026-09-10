@@ -1,6 +1,6 @@
 from pytest import mark
 
-from .split_targets import fragment_region
+from ..split_targets import fragment_region
 
 #fragment_region(chrom: str, start: int, end: int, minimum_size: int, standard_size: int) -> List[List[str]]
 
