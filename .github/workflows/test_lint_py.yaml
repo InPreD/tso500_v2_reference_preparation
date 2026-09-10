@@ -1,0 +1,49 @@
+name: test and lint python code
+on:
+  push:
+  pull_request:
+
+jobs:
+  pytest:
+    name: Run unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - 
+        name: Check out the repo
+        uses: actions/checkout@v7
+      -
+        name: Set up Python 3.14.0
+        uses: actions/setup-python@v7
+        with:
+          python-version: 3.14.3
+      - 
+        name: Install dependencies
+        run: pip install pytest==9.1.1 pytest-emoji==0.2.0 pytest-md==0.2.0
+      - 
+        name: Unit testing 
+        uses: pavelzw/pytest-action@v2
+        with:
+          verbose: true
+          emoji: true
+          job-summary: true
+          custom-arguments: -q
+          click-to-expand: true
+          report-title: 'pytest unit testing'
+  ruff:
+    name: Run ruff linting
+    runs-on: ubuntu-latest
+    steps:
+      - 
+        name: Check out the repo
+        uses: actions/checkout@v7
+      -
+        name: Set up Python 3.14.3
+        uses: actions/setup-python@v7
+        with:
+          python-version: 3.14.3
+      -
+        name: Install dependencies
+        run: pip install ruff==0.16.6
+      -
+        name: Run ruff linting
+        run: ruff check . && ruff format --check .
