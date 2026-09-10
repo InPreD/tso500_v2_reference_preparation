@@ -1,8 +1,9 @@
+#!/usr/bin/env python3
 """Splitting input BED regions into fragments of specified size."""
 import argparse
 import logging
 import math
-from typing import List
+import sys
 
 # Set up logging. The logging level is set to INFO, and the log messages will include the timestamp, log level, and message.
 logging.basicConfig(
@@ -13,7 +14,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # split given region into one or more fragments according to supplied size restrictions
-def fragment_region(chrom: str, start: int, end: int, minimum_size: int, standard_size: int) -> List[List[str]]:
+def fragment_region(chrom: str, start: int, end: int, minimum_size: int, standard_size: int) -> list[list[str]]:
     fragments = []
 
     target_size = end - start
@@ -93,11 +94,11 @@ def main():
     # Check selected parameter values. In case of unreasonable values, exit with a helpful message.
     if (minimum_size > standard_size):
         logger.error("Please make sure that standard_size is larger than minimum size. Exiting.")
-        exit(1)
+        sys.exit(1)
 
     if ((minimum_size < 1) or (standard_size < 1)):
         logger.error("Please make sure that the minimum_size and standard_size are larger than 0. Exiting.")
-        exit(2)
+        sys.exit(2)
 
     # Iterate through the input file one target region at a time, perform the necessary splitting
     # and output the newly created fragments into the output file
@@ -114,7 +115,6 @@ def main():
                 continue
 
             input_region_count += 1
-            fragment_count = 0
 
             # determine input target properties
             chrom = line_s[0]
@@ -130,9 +130,8 @@ def main():
             region_fragments = fragment_region(chrom, start, end, minimum_size, standard_size)
 
             # print the individual fragments into the output file
-            for region_fragment in region_fragments:
+            for fragment_count, region_fragment in enumerate(region_fragments):
                 output_region_count += 1
-                fragment_count += 1
 
                 output_line = region_fragment
                 if output_name_column:

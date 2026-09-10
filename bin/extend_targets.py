@@ -1,8 +1,9 @@
+#!/usr/bin/env python3
 """Expanding input BED regions based on supplied sample coverage profiles."""
 import argparse
 import logging
 import math
-from typing import Dict, List
+import sys
 
 # Set up logging. The logging level is set to INFO, and the log messages will include the timestamp, log level, and message.
 logging.basicConfig(
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 # 1) the supplied coverage profiles (here reduced to the number of samples with 'high-enough' coverage at the relevant positions)
 # 2) the required number of samples with 'high-enough' coverage in the extension areas 
 # 3) the selected extension limit
-def extend_region(chrom: str, start: int, end: int, relevant_position_dict: Dict[int, int], max_extension: int, coverage_threshold: int) -> List[str]:
+def extend_region(chrom: str, start: int, end: int, relevant_position_dict: dict[int, int], max_extension: int, coverage_threshold: int) -> list[str]:
 
     # initiate the start and end values for the extended region
     new_start = start
@@ -40,7 +41,7 @@ def extend_region(chrom: str, start: int, end: int, relevant_position_dict: Dict
 
     # determine how far the end position can be shifted without an unacceptable coverage drop across the coverage profiles
     # note: end positions are considered to be outside the BED region
-    for shift in range(0, max_extension):
+    for shift in range(max_extension):
         test_end = end + shift
         if test_end in relevant_position_dict:
             covered_samples = relevant_position_dict[test_end]
@@ -113,15 +114,15 @@ def main():
     if ((male_sample_count + female_sample_count) != total_sample_count):
         logger.error(f"The total sample count ({total_sample_count}) does not equal the sum of specified"
                       " male sample count ({male_sample_count}) and female sample count ({female_sample_count}) values. Exiting.")
-        exit(1)
+        sys.exit(1)
 
     if ((sample_fraction < 0.1) or (sample_fraction > 1.0)):
         logger.error("Please specify a \"sample_fraction\" parameter value between 0.1 and 1. Exiting.")
-        exit(2)
+        sys.exit(2)
 
     if ((min_depth < 10) or (max_extension < 10)):
         logger.error("Please specify \"min_depth\" and \"max_extension\" parameter values larger than 9. Exiting.")
-        exit(3)
+        sys.exit(3)
 
     # determine how many samples with high-enough coverage (depth >= min_depth) at given position
     # will be required for including that position in the extended regions (the output)
@@ -160,9 +161,7 @@ def main():
     logger.info(f"Number of input target regions: {len(original_targets)}")
 
     # load the input coverage data
-    file_counter = 0
-    for coverage_tsv in coverage_tsv_list:
-        file_counter += 1
+    for file_counter, coverage_tsv in enumerate(coverage_tsv_list):
         logger.info(f"Processing coverage file #{file_counter}/{len(coverage_tsv_list)}..")
         with open(coverage_tsv, "r") as coverage_file:
             for line in coverage_file:
