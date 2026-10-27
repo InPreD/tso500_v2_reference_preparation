@@ -2,7 +2,7 @@ process SPLIT_TARGETS {
     tag "${meta.id}"
     label 'process_single'
 
-    container "python:3.15.1-slim-trixie"
+    container "python:3.15.2-slim-trixie"
 
     input:
     tuple val(meta), path(bed)
