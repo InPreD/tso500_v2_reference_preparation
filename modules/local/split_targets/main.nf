@@ -9,7 +9,7 @@ process SPLIT_TARGETS {
 
     output:
     path("*_split.bed"), emit: bed
-    tuple val("${task.process}"), val('split_targets.py'), val("v1.0.0"), topic: versions, emit: versions_extend_targets_py //TODO
+    tuple val("${task.process}"), val('split_targets.py'), val("${workflow.manifest.version}"), topic: versions, emit: versions_extend_targets_py
     tuple val("${task.process}"), val('python'), eval("python -V | sed 's/Python //'"), topic: versions, emit: versions_python
 
     when:
