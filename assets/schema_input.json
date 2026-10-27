@@ -13,6 +13,12 @@
                 "errorMessage": "Sample name must be provided and cannot contain spaces",
                 "meta": ["id"]
             },
+            "sex": {
+                "type": "string",
+                "pattern": "^[M,m,F,f]$",
+                "errorMessage": "Sample sex must be provided and should be m/M for male or f/F for female",
+                "meta": ["sex"]
+            },
             "bam": {
                 "type": "string",
                 "format": "file-path",
@@ -21,6 +27,6 @@
                 "errorMessage": "BAM file must be provided, cannot contain spaces and must have extension '.bam'"
             }
         },
-        "required": ["sample", "bam"]
+        "required": ["sample", "sex", "bam"]
     }
 }

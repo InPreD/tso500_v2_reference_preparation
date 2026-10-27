@@ -1,2 +1,3 @@
-sample,bam
-sample_1,assets/test_stub/sample_1.bam
+sample,sex,bam
+sample_1,M,assets/test_stub/sample_1.bam
+sample_2,F,assets/test_stub/sample_2.bam
