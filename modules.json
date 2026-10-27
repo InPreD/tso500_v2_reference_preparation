@@ -29,6 +29,11 @@
                         "branch": "master",
                         "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
                         "installed_by": ["modules"]
+                    },
+                    "gatk4/preprocessintervals": {
+                        "branch": "master",
+                        "git_sha": "7cdf77024900a466c05f34620e2e415b8c5acf25",
+                        "installed_by": ["modules"]
                     }
                 }
             },
