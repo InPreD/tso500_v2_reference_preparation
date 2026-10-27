@@ -10,7 +10,7 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": ["input", "panel_bed", "reference_fai", "outdir"],
+            "required": ["input", "panel_bed", "reference", "reference_dict", "reference_fai", "outdir"],
             "properties": {
                 "input": {
                     "type": "string",
@@ -39,6 +39,26 @@
                     "pattern": "^\\S+\\.bed$",
                     "description": "Path to bed file containing all panel target regions.",
                     "help_text": "This file is obtained from the provider of the panel (e.g. illumina).",
+                    "fa_icon": "fas fa-file"
+                },
+                "reference": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "pattern": "^\\S+\\.f[a,asta,na]$",
+                    "description": "Path to .fa/.fasta/.fna file containing reference used in alignment.",
+                    "help_text": "Reference fasta file.",
+                    "fa_icon": "fas fa-file"
+                },
+                "reference_dict": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "pattern": "^\\S+\\.dict$",
+                    "description": "Path to .dict file for reference used in alignment.",
+                    "help_text": "A sequence dictionary file can be created by running picard.jar CreateSequenceDictionary on a reference fasta file.",
                     "fa_icon": "fas fa-file"
                 },
                 "reference_fai": {
