@@ -92,7 +92,7 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     // MODULE: Run extend_targets
     //
     ch_extend_targets_input = BEDTOOLS_COVERAGE.out.bed.map{it -> [ it ]}.collect().map{
-        // count sex and combine all bed files
+        // count sex occurences and combine all bed files
         it ->
         def female = 0
         def male = 0
