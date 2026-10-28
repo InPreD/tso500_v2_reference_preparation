@@ -13,6 +13,7 @@ include { EXTEND_TARGETS                            } from '../modules/local/ext
 include { FAI_TO_CHR_SIZES                          } from '../modules/local/fai_to_chr_sizes'
 include { GATK4_ADDORREPLACEREADGROUPS              } from '../modules/nf-core/gatk4/addorreplacereadgroups'
 include { GATK4_COLLECTREADCOUNTS                   } from '../modules/nf-core/gatk4/collectreadcounts'
+include { GATK4_CREATEREADCOUNTPANELOFNORMALS       } from '../modules/nf-core/gatk4/createreadcountpanelofnormals'
 include { GATK4_PREPROCESSINTERVALS                 } from '../modules/nf-core/gatk4/preprocessintervals'
 include { SORT as SORT_BED                          } from '../modules/local/sort'
 include { SORT as SORT_SUBTRACT                     } from '../modules/local/sort'
@@ -137,8 +138,14 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     //
     // MODULE: Run gatk4/collectreadcounts
     //
-    ch_gatk4_collectreadcounts_input = GATK4_ADDORREPLACEREADGROUPS.out.bam.join(GATK4_ADDORREPLACEREADGROUPS.out.bai).combine(GATK4_PREPROCESSINTERVALS.out.interval_list.map{ meta, list -> list }).view()
+    ch_gatk4_collectreadcounts_input = GATK4_ADDORREPLACEREADGROUPS.out.bam.join(GATK4_ADDORREPLACEREADGROUPS.out.bai).combine(GATK4_PREPROCESSINTERVALS.out.interval_list.map{ meta, list -> list })
     GATK4_COLLECTREADCOUNTS(ch_gatk4_collectreadcounts_input, channel.value([ [], [] ]), channel.value([ [], [] ]), channel.value([ [], [] ]))
+
+    //
+    // MODULE: Run gatk4/createreadcountpanelofnormals
+    //
+    ch_gatk4_createreadcountpanelofnormals_input = GATK4_COLLECTREADCOUNTS.out.hdf5.map{ meta, hdf5 -> hdf5 }.collect().map{ it -> [ [ id: it.size() + '_sample_pon' ], it ]}
+    GATK4_CREATEREADCOUNTPANELOFNORMALS(ch_gatk4_createreadcountpanelofnormals_input)
 
     //
     // Collate and save software versions
