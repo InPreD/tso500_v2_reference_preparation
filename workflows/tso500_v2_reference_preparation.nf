@@ -12,6 +12,7 @@ include { BEDTOOLS_SUBTRACT                         } from '../modules/nf-core/b
 include { EXTEND_TARGETS                            } from '../modules/local/extend_targets'
 include { FAI_TO_CHR_SIZES                          } from '../modules/local/fai_to_chr_sizes'
 include { GATK4_ADDORREPLACEREADGROUPS              } from '../modules/nf-core/gatk4/addorreplacereadgroups'
+include { GATK4_COLLECTREADCOUNTS                   } from '../modules/nf-core/gatk4/collectreadcounts'
 include { GATK4_PREPROCESSINTERVALS                 } from '../modules/nf-core/gatk4/preprocessintervals'
 include { SORT as SORT_BED                          } from '../modules/local/sort'
 include { SORT as SORT_SUBTRACT                     } from '../modules/local/sort'
@@ -132,6 +133,12 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     // MODULE: Run gatk4/addorreplacereadgroups
     //
     GATK4_ADDORREPLACEREADGROUPS(ch_samplesheet, channel.value([ [], [] ]), channel.value([ [], [] ]))
+
+    //
+    // MODULE: Run gatk4/collectreadcounts
+    //
+    ch_gatk4_collectreadcounts_input = GATK4_ADDORREPLACEREADGROUPS.out.bam.join(GATK4_ADDORREPLACEREADGROUPS.out.bai).combine(GATK4_PREPROCESSINTERVALS.out.interval_list.map{ meta, list -> list }).view()
+    GATK4_COLLECTREADCOUNTS(ch_gatk4_collectreadcounts_input, channel.value([ [], [] ]), channel.value([ [], [] ]), channel.value([ [], [] ]))
 
     //
     // Collate and save software versions
