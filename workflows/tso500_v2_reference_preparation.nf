@@ -15,6 +15,7 @@ include { GATK4_ADDORREPLACEREADGROUPS              } from '../modules/nf-core/g
 include { GATK4_COLLECTREADCOUNTS                   } from '../modules/nf-core/gatk4/collectreadcounts'
 include { GATK4_CREATEREADCOUNTPANELOFNORMALS       } from '../modules/nf-core/gatk4/createreadcountpanelofnormals'
 include { GATK4_DENOISEREADCOUNTS                   } from '../modules/nf-core/gatk4/denoisereadcounts'
+include { GATK4_HAPLOTYPECALLER                     } from '../modules/nf-core/gatk4/haplotypecaller'
 include { GATK4_PREPROCESSINTERVALS                 } from '../modules/nf-core/gatk4/preprocessintervals'
 include { SORT as SORT_BED                          } from '../modules/local/sort'
 include { SORT as SORT_SUBTRACT                     } from '../modules/local/sort'
@@ -45,7 +46,7 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     //
     // MODULE: Run fai to chromosome sizes
     //
-    ch_fai_to_chr_sizes_input = channel.fromPath(reference_fai).map{ fai -> [ [ id: fai.simpleName ], fai ] }
+    ch_fai_to_chr_sizes_input = channel.fromPath(reference_fai).map{ fai -> [ [ id: fai.simpleName ], fai ] }.first()
     FAI_TO_CHR_SIZES(ch_fai_to_chr_sizes_input)
 
     //
@@ -127,9 +128,9 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     //
     // MODULE: Run gatk4/preprocessintervals
     //
-    ch_gatk4_preprocessintervals_input_1 = channel.fromPath(reference).map{ fa -> [ [ id: fa.simpleName ], fa ] }
-    ch_gatk4_preprocessintervals_input_2 = channel.fromPath(reference_dict).map{ dict -> [ [ id: dict.simpleName ], dict ] }
-    GATK4_PREPROCESSINTERVALS(ch_gatk4_preprocessintervals_input_1, ch_gatk4_preprocessintervals_input_2, ch_fai_to_chr_sizes_input, SPLIT_TARGETS.out.bed, channel.value([ [], [] ]))
+    ch_gatk4_preprocessintervals_input_1 = channel.fromPath(reference).map{ fa -> [ [ id: fa.simpleName ], fa ] }.first()
+    ch_gatk4_preprocessintervals_input_2 = channel.fromPath(reference_dict).map{ dict -> [ [ id: dict.simpleName ], dict ] }.first()
+    GATK4_PREPROCESSINTERVALS(ch_gatk4_preprocessintervals_input_1, ch_fai_to_chr_sizes_input, ch_gatk4_preprocessintervals_input_2, SPLIT_TARGETS.out.bed, channel.value([ [], [] ]))
 
     //
     // MODULE: Run gatk4/addorreplacereadgroups
@@ -152,6 +153,12 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     // MODULE: Run gatk4/denoisereadcounts
     //
     GATK4_DENOISEREADCOUNTS(GATK4_COLLECTREADCOUNTS.out.hdf5, GATK4_CREATEREADCOUNTPANELOFNORMALS.out.pon)
+
+    //
+    // MODULE: Run gatk4/haplotypecaller
+    //
+    ch_gatk4_haplotypecaller_input = ch_gatk4_collectreadcounts_input.map{ meta, bam, bai, list -> [ meta, bam, bai, list, [] ]}
+    GATK4_HAPLOTYPECALLER(ch_gatk4_haplotypecaller_input, ch_gatk4_preprocessintervals_input_1,  ch_fai_to_chr_sizes_input, ch_gatk4_preprocessintervals_input_2, channel.value([ [], [] ]), channel.value([ [], [] ]))
 
     //
     // Collate and save software versions
