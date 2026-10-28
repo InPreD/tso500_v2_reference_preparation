@@ -54,13 +54,12 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     //
     // MODULE: Run bedtools/slop
     //
-    ch_bedtools_slop_input = SORT_BED.out.bed.map{ meta, bed -> [ [ id: meta.id + '_slop' ], bed ] }
-    BEDTOOLS_SLOP(ch_bedtools_slop_input, FAI_TO_CHR_SIZES.out.tsv)
+    BEDTOOLS_SLOP(SORT_BED.out.bed, FAI_TO_CHR_SIZES.out.tsv)
 
     //
     // MODULE: Run bedtools/subtract
     //
-    ch_bedtools_subtract_input = BEDTOOLS_SLOP.out.bed.map{ meta, bed -> [ [ id: meta.id + '_complement' ], bed, file(panel_bed) ] }
+    ch_bedtools_subtract_input = BEDTOOLS_SLOP.out.bed.map{ meta, bed -> [ meta, bed, file(panel_bed) ] }
     BEDTOOLS_SUBTRACT(ch_bedtools_subtract_input)
 
     //
@@ -71,8 +70,7 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     //
     // MODULE: Run bedtools/merge
     //
-    ch_bedtools_merge_subtract_input = SORT_SUBTRACT.out.bed.map{ meta, bed -> [ [ id: meta.id + '_merged' ], bed ] }
-    BEDTOOLS_MERGE_SUBTRACT(ch_bedtools_merge_subtract_input)
+    BEDTOOLS_MERGE_SUBTRACT(SORT_SUBTRACT.out.bed)
 
     //
     // MODULE: Run bedtools/bamtobed
@@ -115,7 +113,7 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     //
     // MODULE: Run bedtools/merge
     //
-    ch_bedtools_merge_extend_input = EXTEND_TARGETS.out.bed.map{ bed -> [ [ id: bed.simpleName + '_merged' ], bed ] }
+    ch_bedtools_merge_extend_input = EXTEND_TARGETS.out.bed.map{ bed -> [ [ id: bed.simpleName ], bed ] }
     BEDTOOLS_MERGE_EXTEND(ch_bedtools_merge_extend_input)
 
     //
