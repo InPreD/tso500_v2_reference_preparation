@@ -11,6 +11,7 @@ include { BEDTOOLS_SLOP                             } from '../modules/nf-core/b
 include { BEDTOOLS_SUBTRACT                         } from '../modules/nf-core/bedtools/subtract'
 include { EXTEND_TARGETS                            } from '../modules/local/extend_targets'
 include { FAI_TO_CHR_SIZES                          } from '../modules/local/fai_to_chr_sizes'
+include { GATK4_ADDORREPLACEREADGROUPS              } from '../modules/nf-core/gatk4/addorreplacereadgroups'
 include { GATK4_PREPROCESSINTERVALS                 } from '../modules/nf-core/gatk4/preprocessintervals'
 include { SORT as SORT_BED                          } from '../modules/local/sort'
 include { SORT as SORT_SUBTRACT                     } from '../modules/local/sort'
@@ -127,7 +128,12 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     //
     ch_gatk4_preprocessintervals_input_1 = channel.fromPath(reference).map{ fa -> [ [ id: fa.simpleName ], fa ] }
     ch_gatk4_preprocessintervals_input_2 = channel.fromPath(reference_dict).map{ dict -> [ [ id: dict.simpleName ], dict ] }
-    GATK4_PREPROCESSINTERVALS(ch_gatk4_preprocessintervals_input_1, ch_gatk4_preprocessintervals_input_2, ch_fai_to_chr_sizes_input, SPLIT_TARGETS.out.bed, channel.empty())
+    GATK4_PREPROCESSINTERVALS(ch_gatk4_preprocessintervals_input_1, ch_gatk4_preprocessintervals_input_2, ch_fai_to_chr_sizes_input, SPLIT_TARGETS.out.bed, channel.value([ [], [] ]))
+
+    //
+    // MODULE: Run gatk4/addorreplacereadgroups
+    //
+    GATK4_ADDORREPLACEREADGROUPS(ch_samplesheet, channel.value([ [], [] ]), channel.value([ [], [] ]))
 
     //
     // Collate and save software versions
