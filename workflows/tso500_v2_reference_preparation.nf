@@ -11,6 +11,13 @@ include { BEDTOOLS_SLOP                             } from '../modules/nf-core/b
 include { BEDTOOLS_SUBTRACT                         } from '../modules/nf-core/bedtools/subtract'
 include { EXTEND_TARGETS                            } from '../modules/local/extend_targets'
 include { FAI_TO_CHR_SIZES                          } from '../modules/local/fai_to_chr_sizes'
+include { GATK4_ADDORREPLACEREADGROUPS              } from '../modules/nf-core/gatk4/addorreplacereadgroups'
+include { GATK4_COLLECTREADCOUNTS                   } from '../modules/nf-core/gatk4/collectreadcounts'
+include { GATK4_CREATEREADCOUNTPANELOFNORMALS       } from '../modules/nf-core/gatk4/createreadcountpanelofnormals'
+include { GATK4_DENOISEREADCOUNTS                   } from '../modules/nf-core/gatk4/denoisereadcounts'
+include { GATK4_HAPLOTYPECALLER                     } from '../modules/nf-core/gatk4/haplotypecaller'
+include { GATK4_PREPROCESSINTERVALS                 } from '../modules/nf-core/gatk4/preprocessintervals'
+include { POSITION_COUNT                            } from '../modules/local/position_count'
 include { SORT as SORT_BED                          } from '../modules/local/sort'
 include { SORT as SORT_SUBTRACT                     } from '../modules/local/sort'
 include { SORT as SORT_BAMTOBED                     } from '../modules/local/sort'
@@ -29,6 +36,8 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     take:
     ch_samplesheet // channel: samplesheet read in from --input
     panel_bed
+    reference
+    reference_dict
     reference_fai
     outdir
 
@@ -38,7 +47,7 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     //
     // MODULE: Run fai to chromosome sizes
     //
-    ch_fai_to_chr_sizes_input = channel.fromPath(reference_fai).map{ fai -> [ [ id: fai.simpleName ], fai ] }
+    ch_fai_to_chr_sizes_input = channel.fromPath(reference_fai).map{ fai -> [ [ id: fai.simpleName ], fai ] }.first()
     FAI_TO_CHR_SIZES(ch_fai_to_chr_sizes_input)
 
     //
@@ -50,14 +59,15 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     //
     // MODULE: Run bedtools/slop
     //
-    ch_bedtools_slop_input = SORT_BED.out.bed.map{ meta, bed -> [ [ id: meta.id + '_slop' ], bed ] }
-    BEDTOOLS_SLOP(ch_bedtools_slop_input, FAI_TO_CHR_SIZES.out.tsv)
+    BEDTOOLS_SLOP(SORT_BED.out.bed, FAI_TO_CHR_SIZES.out.tsv)
+    ch_position_count_input = SORT_BED.out.bed.combine(BEDTOOLS_SLOP.out.bed.map{ meta, bed -> bed }).map{ meta, bed1, bed2 -> [ meta, [ bed1, bed2 ] ] }
 
     //
     // MODULE: Run bedtools/subtract
     //
-    ch_bedtools_subtract_input = BEDTOOLS_SLOP.out.bed.map{ meta, bed -> [ [ id: meta.id + '_complement' ], bed, file(panel_bed) ] }
+    ch_bedtools_subtract_input = BEDTOOLS_SLOP.out.bed.map{ meta, bed -> [ meta, bed, file(panel_bed) ] }
     BEDTOOLS_SUBTRACT(ch_bedtools_subtract_input)
+    ch_position_count_input = ch_position_count_input.combine(BEDTOOLS_SUBTRACT.out.bed.map{ meta, bed -> bed }).map{ meta, bed1, bed2 -> [ meta, bed1 + [ bed2 ] ] }
 
     //
     // MODULE: Run sort
@@ -67,8 +77,8 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     //
     // MODULE: Run bedtools/merge
     //
-    ch_bedtools_merge_subtract_input = SORT_SUBTRACT.out.bed.map{ meta, bed -> [ [ id: meta.id + '_merged' ], bed ] }
-    BEDTOOLS_MERGE_SUBTRACT(ch_bedtools_merge_subtract_input)
+    BEDTOOLS_MERGE_SUBTRACT(SORT_SUBTRACT.out.bed)
+    ch_position_count_input = ch_position_count_input.combine(BEDTOOLS_MERGE_SUBTRACT.out.bed.map{ meta, bed -> bed }).map{ meta, bed1, bed2 -> [ meta, bed1 + [ bed2 ] ] }
 
     //
     // MODULE: Run bedtools/bamtobed
@@ -90,7 +100,7 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     // MODULE: Run extend_targets
     //
     ch_extend_targets_input = BEDTOOLS_COVERAGE.out.bed.map{it -> [ it ]}.collect().map{
-        // count sex and combine all bed files
+        // count sex occurences and combine all bed files
         it ->
         def female = 0
         def male = 0
@@ -107,17 +117,60 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
         return [ [ id: 'normal', female: female, male: male ], tsv ]
     }
     EXTEND_TARGETS(ch_sort_input, ch_extend_targets_input)
+    ch_position_count_input = ch_position_count_input.combine(EXTEND_TARGETS.out.bed).map{ meta, bed1, bed2 -> [ meta, bed1 + [ bed2 ] ] }
 
     //
     // MODULE: Run bedtools/merge
     //
-    ch_bedtools_merge_extend_input = EXTEND_TARGETS.out.bed.map{ bed -> [ [ id: bed.simpleName + '_merged' ], bed ] }
+    ch_bedtools_merge_extend_input = EXTEND_TARGETS.out.bed.map{ bed -> [ [ id: bed.simpleName ], bed ] }
     BEDTOOLS_MERGE_EXTEND(ch_bedtools_merge_extend_input)
+    ch_position_count_input = ch_position_count_input.combine(BEDTOOLS_MERGE_EXTEND.out.bed.map{ meta, bed -> bed }).map{ meta, bed1, bed2 -> [ meta, bed1 + [ bed2 ] ] }
 
     //
     // MODULE: Run split_targets
     //
     SPLIT_TARGETS(BEDTOOLS_MERGE_EXTEND.out.bed)
+    ch_position_count_input = ch_position_count_input.combine(SPLIT_TARGETS.out.bed.map{ meta, bed -> bed }).map{ meta, bed1, bed2 -> [ meta, bed1 + [ bed2 ] ] }
+
+    //
+    // MODULE: Run split_targets
+    //
+    POSITION_COUNT(ch_position_count_input, FAI_TO_CHR_SIZES.out.tsv)
+
+    //
+    // MODULE: Run gatk4/preprocessintervals
+    //
+    ch_gatk4_preprocessintervals_input_1 = channel.fromPath(reference).map{ fa -> [ [ id: fa.simpleName ], fa ] }.first()
+    ch_gatk4_preprocessintervals_input_2 = channel.fromPath(reference_dict).map{ dict -> [ [ id: dict.simpleName ], dict ] }.first()
+    GATK4_PREPROCESSINTERVALS(ch_gatk4_preprocessintervals_input_1, ch_fai_to_chr_sizes_input, ch_gatk4_preprocessintervals_input_2, SPLIT_TARGETS.out.bed, channel.value([ [], [] ]))
+
+    //
+    // MODULE: Run gatk4/addorreplacereadgroups
+    //
+    GATK4_ADDORREPLACEREADGROUPS(ch_samplesheet, channel.value([ [], [] ]), channel.value([ [], [] ]))
+
+    //
+    // MODULE: Run gatk4/collectreadcounts
+    //
+    ch_gatk4_collectreadcounts_input = GATK4_ADDORREPLACEREADGROUPS.out.bam.join(GATK4_ADDORREPLACEREADGROUPS.out.bai).combine(GATK4_PREPROCESSINTERVALS.out.interval_list.map{ meta, list -> list })
+    GATK4_COLLECTREADCOUNTS(ch_gatk4_collectreadcounts_input, channel.value([ [], [] ]), channel.value([ [], [] ]), channel.value([ [], [] ]))
+
+    //
+    // MODULE: Run gatk4/createreadcountpanelofnormals
+    //
+    ch_gatk4_createreadcountpanelofnormals_input = GATK4_COLLECTREADCOUNTS.out.hdf5.map{ meta, hdf5 -> hdf5 }.collect().map{ it -> [ [ id: it.size() + '_sample_pon' ], it ]}
+    GATK4_CREATEREADCOUNTPANELOFNORMALS(ch_gatk4_createreadcountpanelofnormals_input)
+
+    //
+    // MODULE: Run gatk4/denoisereadcounts
+    //
+    GATK4_DENOISEREADCOUNTS(GATK4_COLLECTREADCOUNTS.out.hdf5, GATK4_CREATEREADCOUNTPANELOFNORMALS.out.pon)
+
+    //
+    // MODULE: Run gatk4/haplotypecaller
+    //
+    ch_gatk4_haplotypecaller_input = ch_gatk4_collectreadcounts_input.map{ meta, bam, bai, list -> [ meta, bam, bai, list, [] ]}
+    GATK4_HAPLOTYPECALLER(ch_gatk4_haplotypecaller_input, ch_gatk4_preprocessintervals_input_1,  ch_fai_to_chr_sizes_input, ch_gatk4_preprocessintervals_input_2, channel.value([ [], [] ]), channel.value([ [], [] ]))
 
     //
     // Collate and save software versions

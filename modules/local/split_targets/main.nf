@@ -8,7 +8,7 @@ process SPLIT_TARGETS {
     tuple val(meta), path(bed)
 
     output:
-    path("*_split.bed"), emit: bed
+    tuple val(meta), path("*_split.bed"), emit: bed
     tuple val("${task.process}"), val('split_targets.py'), val("${workflow.manifest.version}"), topic: versions, emit: versions_extend_targets_py
     tuple val("${task.process}"), val('python'), eval("python -V | sed 's/Python //'"), topic: versions, emit: versions_python
 
