@@ -17,6 +17,7 @@ include { GATK4_CREATEREADCOUNTPANELOFNORMALS       } from '../modules/nf-core/g
 include { GATK4_DENOISEREADCOUNTS                   } from '../modules/nf-core/gatk4/denoisereadcounts'
 include { GATK4_HAPLOTYPECALLER                     } from '../modules/nf-core/gatk4/haplotypecaller'
 include { GATK4_PREPROCESSINTERVALS                 } from '../modules/nf-core/gatk4/preprocessintervals'
+include { POSITION_COUNT                            } from '../modules/local/position_count'
 include { SORT as SORT_BED                          } from '../modules/local/sort'
 include { SORT as SORT_SUBTRACT                     } from '../modules/local/sort'
 include { SORT as SORT_BAMTOBED                     } from '../modules/local/sort'
@@ -59,12 +60,14 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     // MODULE: Run bedtools/slop
     //
     BEDTOOLS_SLOP(SORT_BED.out.bed, FAI_TO_CHR_SIZES.out.tsv)
+    ch_position_count_input = SORT_BED.out.bed.combine(BEDTOOLS_SLOP.out.bed.map{ meta, bed -> bed }).map{ meta, bed1, bed2 -> [ meta, [ bed1, bed2 ] ] }
 
     //
     // MODULE: Run bedtools/subtract
     //
     ch_bedtools_subtract_input = BEDTOOLS_SLOP.out.bed.map{ meta, bed -> [ meta, bed, file(panel_bed) ] }
     BEDTOOLS_SUBTRACT(ch_bedtools_subtract_input)
+    ch_position_count_input = ch_position_count_input.combine(BEDTOOLS_SUBTRACT.out.bed.map{ meta, bed -> bed }).map{ meta, bed1, bed2 -> [ meta, bed1 + [ bed2 ] ] }
 
     //
     // MODULE: Run sort
@@ -75,6 +78,7 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     // MODULE: Run bedtools/merge
     //
     BEDTOOLS_MERGE_SUBTRACT(SORT_SUBTRACT.out.bed)
+    ch_position_count_input = ch_position_count_input.combine(BEDTOOLS_MERGE_SUBTRACT.out.bed.map{ meta, bed -> bed }).map{ meta, bed1, bed2 -> [ meta, bed1 + [ bed2 ] ] }
 
     //
     // MODULE: Run bedtools/bamtobed
@@ -113,17 +117,25 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
         return [ [ id: 'normal', female: female, male: male ], tsv ]
     }
     EXTEND_TARGETS(ch_sort_input, ch_extend_targets_input)
+    ch_position_count_input = ch_position_count_input.combine(EXTEND_TARGETS.out.bed).map{ meta, bed1, bed2 -> [ meta, bed1 + [ bed2 ] ] }
 
     //
     // MODULE: Run bedtools/merge
     //
     ch_bedtools_merge_extend_input = EXTEND_TARGETS.out.bed.map{ bed -> [ [ id: bed.simpleName ], bed ] }
     BEDTOOLS_MERGE_EXTEND(ch_bedtools_merge_extend_input)
+    ch_position_count_input = ch_position_count_input.combine(BEDTOOLS_MERGE_EXTEND.out.bed.map{ meta, bed -> bed }).map{ meta, bed1, bed2 -> [ meta, bed1 + [ bed2 ] ] }
 
     //
     // MODULE: Run split_targets
     //
     SPLIT_TARGETS(BEDTOOLS_MERGE_EXTEND.out.bed)
+    ch_position_count_input = ch_position_count_input.combine(SPLIT_TARGETS.out.bed.map{ meta, bed -> bed }).map{ meta, bed1, bed2 -> [ meta, bed1 + [ bed2 ] ] }
+
+    //
+    // MODULE: Run split_targets
+    //
+    POSITION_COUNT(ch_position_count_input, FAI_TO_CHR_SIZES.out.tsv)
 
     //
     // MODULE: Run gatk4/preprocessintervals
