@@ -11,6 +11,7 @@ process FAI_TO_CHR_SIZES {
     path("*_chr_sizes.tsv"), emit: tsv
     path("*_chr_sizes_sorted.tsv"), emit: sorted_tsv
     tuple val("${task.process}"), val('awk'), eval("awk --version | head -n1 | cut -d',' -f1 | cut -d' ' -f3"), topic: versions, emit: versions_awk
+    tuple val("${task.process}"), val('sort'), eval("sort --version | grep '^sort' | sed -e 's/sort (GNU coreutils) //g'"), topic: versions, emit: versions_sort
 
     when:
     task.ext.when == null || task.ext.when
