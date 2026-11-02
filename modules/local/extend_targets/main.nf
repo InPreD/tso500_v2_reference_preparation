@@ -2,7 +2,7 @@ process EXTEND_TARGETS {
     tag "${meta1.id}"
     label 'process_single'
 
-    container "python:3.15.2-slim-trixie"
+    container "inpred/python:3.15.2-slim-trixie"
 
     input:
     tuple val(meta1), path(bed)
