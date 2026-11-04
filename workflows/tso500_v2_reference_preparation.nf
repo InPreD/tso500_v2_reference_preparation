@@ -16,6 +16,7 @@ include { GATK4_COLLECTREADCOUNTS                   } from '../modules/nf-core/g
 include { GATK4_CREATEREADCOUNTPANELOFNORMALS       } from '../modules/nf-core/gatk4/createreadcountpanelofnormals'
 include { GATK4_DENOISEREADCOUNTS                   } from '../modules/nf-core/gatk4/denoisereadcounts'
 include { GATK4_GENOMICSDBIMPORT                    } from '../modules/nf-core/gatk4/genomicsdbimport'
+include { GATK4_GENOTYPEGVCFS                       } from '../modules/nf-core/gatk4/genotypegvcfs'
 include { GATK4_HAPLOTYPECALLER                     } from '../modules/nf-core/gatk4/haplotypecaller'
 include { GATK4_PREPROCESSINTERVALS                 } from '../modules/nf-core/gatk4/preprocessintervals'
 include { POSITION_COUNT                            } from '../modules/local/position_count'
@@ -185,6 +186,12 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
         [ [ id: tbi.size() + '_sample_pon' ], vcf, tbi, bed, [], [] ]
     }
     GATK4_GENOMICSDBIMPORT(ch_gatk4_genomicsdbimport_input, channel.value(false), channel.value(false), channel.value(true))
+
+    //
+    // MODULE: Run gatk4/genotypegvcfs
+    //
+    ch_gatk4_gentypegvcfs_input = GATK4_GENOMICSDBIMPORT.out.genomicsdb.map{ meta, db -> [ meta, db, [], [], [] ] }
+    GATK4_GENOTYPEGVCFS(ch_gatk4_gentypegvcfs_input, ch_gatk4_preprocessintervals_input_1, ch_fai_to_chr_sizes_input, ch_gatk4_preprocessintervals_input_2, channel.value([ [], [] ]), channel.value([ [], [] ]))
 
     //
     // Collate and save software versions
