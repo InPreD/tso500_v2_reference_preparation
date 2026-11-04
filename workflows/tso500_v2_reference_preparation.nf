@@ -19,6 +19,7 @@ include { GATK4_GENOMICSDBIMPORT                    } from '../modules/nf-core/g
 include { GATK4_GENOTYPEGVCFS                       } from '../modules/nf-core/gatk4/genotypegvcfs'
 include { GATK4_HAPLOTYPECALLER                     } from '../modules/nf-core/gatk4/haplotypecaller'
 include { GATK4_PREPROCESSINTERVALS                 } from '../modules/nf-core/gatk4/preprocessintervals'
+include { GATK4_VARIANTRECALIBRATOR                 } from '../modules/nf-core/gatk4/variantrecalibrator'
 include { POSITION_COUNT                            } from '../modules/local/position_count'
 include { SORT as SORT_BED                          } from '../modules/local/sort'
 include { SORT as SORT_SUBTRACT                     } from '../modules/local/sort'
@@ -38,6 +39,8 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     take:
     ch_samplesheet // channel: samplesheet read in from --input
     panel_bed
+    gatk4_resource_labels
+    gatk4_resources
     reference
     reference_dict
     reference_fai
@@ -46,6 +49,7 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     main:
 
     def ch_versions = channel.empty()
+    .view()
     //
     // MODULE: Run fai to chromosome sizes
     //
@@ -192,6 +196,14 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     //
     ch_gatk4_gentypegvcfs_input = GATK4_GENOMICSDBIMPORT.out.genomicsdb.map{ meta, db -> [ meta, db, [], [], [] ] }
     GATK4_GENOTYPEGVCFS(ch_gatk4_gentypegvcfs_input, ch_gatk4_preprocessintervals_input_1, ch_fai_to_chr_sizes_input, ch_gatk4_preprocessintervals_input_2, channel.value([ [], [] ]), channel.value([ [], [] ]))
+
+    //
+    // MODULE: Run gatk4/variantrecalibrator
+    //
+    ch_gatk4_variantrecalibrator_input_1 = GATK4_GENOTYPEGVCFS.out.vcf.join(GATK4_GENOTYPEGVCFS.out.tbi)
+    ch_gatk4_variantrecalibrator_input_2 = channel.fromPath(gatk4_resources + '/*.vcf???').collect()
+    ch_gatk4_variantrecalibrator_input_3 = channel.fromPath(gatk4_resources + '/*.tbi').collect()
+    GATK4_VARIANTRECALIBRATOR(ch_gatk4_variantrecalibrator_input_1, ch_gatk4_variantrecalibrator_input_2, ch_gatk4_variantrecalibrator_input_3, channel.value(gatk4_resource_labels.split(';')), ch_gatk4_preprocessintervals_input_1.map{ meta, fasta -> fasta }, ch_fai_to_chr_sizes_input.map{ meta, fai -> fai }, ch_gatk4_preprocessintervals_input_2.map{ meta, dict -> dict })
 
     //
     // Collate and save software versions

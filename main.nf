@@ -38,6 +38,8 @@ workflow INPRED_TSO500_V2_REFERENCE_PREPARATION {
     TSO500_V2_REFERENCE_PREPARATION (
         samplesheet,
         params.panel_bed,
+        params.gatk4_resource_labels,
+        params.gatk4_resources,
         params.reference,
         params.reference_dict,
         params.reference_fai,
