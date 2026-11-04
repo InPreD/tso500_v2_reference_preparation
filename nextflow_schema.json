@@ -41,6 +41,22 @@
                     "help_text": "This file is obtained from the provider of the panel (e.g. illumina).",
                     "fa_icon": "fas fa-file"
                 },
+                "gatk4_resource_labels": {
+                    "type": "string",
+                    "description": "Semicolon-separated list of resource labels for GATK4 VariantRecalibrator.",
+                    "help_text": "This parameter is used to specify the resource labels for the GATK4 VariantRecalibrator step. It should be a semicolon-separated list of labels corresponding to the resources used in the recalibration process.",
+                    "fa_icon": "fas fa-label"
+                },
+                "gatk4_resources": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "exists": true,
+                    "mimetype": "text/plain",
+                    "pattern": "^\\S+$",
+                    "description": "Directory containing resource vcf/vcf.gz files for GATK4 VariantRecalibrator.",
+                    "help_text": "This parameter is used to specify the resource vcfs for the GATK4 VariantRecalibrator step. It should be a directory containing vcf/vcf.gz files corresponding to the labels used in the recalibration process.",
+                    "fa_icon": "fas fa-folder"
+                },
                 "reference": {
                     "type": "string",
                     "format": "file-path",
