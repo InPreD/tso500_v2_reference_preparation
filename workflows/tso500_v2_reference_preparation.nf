@@ -3,6 +3,7 @@
     IMPORT MODULES / SUBWORKFLOWS / FUNCTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
+include { BCFTOOLS_NORM                             } from '../modules/nf-core/bcftools/norm'
 include { BEDTOOLS_BAMTOBED                         } from '../modules/nf-core/bedtools/bamtobed'
 include { BEDTOOLS_COVERAGE                         } from '../modules/nf-core/bedtools/coverage'
 include { BEDTOOLS_MERGE as BEDTOOLS_MERGE_SUBTRACT } from '../modules/nf-core/bedtools/merge'
@@ -211,6 +212,12 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     //
     ch_gatk4_applyvqsr_input = ch_gatk4_variantrecalibrator_input_1.join(GATK4_VARIANTRECALIBRATOR.out.recal).join(GATK4_VARIANTRECALIBRATOR.out.idx).join(GATK4_VARIANTRECALIBRATOR.out.tranches)
     GATK4_APPLYVQSR(ch_gatk4_applyvqsr_input, ch_gatk4_preprocessintervals_input_1.map{ meta, fasta -> fasta }, ch_fai_to_chr_sizes_input.map{ meta, fai -> fai }, ch_gatk4_preprocessintervals_input_2.map{ meta, dict -> dict })
+
+    //
+    // MODULE: Run bcftools/norm
+    //
+    ch_bcftools_norm_input = GATK4_APPLYVQSR.out.vcf.join(GATK4_APPLYVQSR.out.tbi).view()
+    BCFTOOLS_NORM(ch_bcftools_norm_input, ch_gatk4_preprocessintervals_input_1)
 
     //
     // Collate and save software versions
