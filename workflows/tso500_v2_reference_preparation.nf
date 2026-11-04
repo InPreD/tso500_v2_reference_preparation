@@ -12,6 +12,7 @@ include { BEDTOOLS_SUBTRACT                         } from '../modules/nf-core/b
 include { EXTEND_TARGETS                            } from '../modules/local/extend_targets'
 include { FAI_TO_CHR_SIZES                          } from '../modules/local/fai_to_chr_sizes'
 include { GATK4_ADDORREPLACEREADGROUPS              } from '../modules/nf-core/gatk4/addorreplacereadgroups'
+include { GATK4_APPLYVQSR                           } from '../modules/nf-core/gatk4/applyvqsr'
 include { GATK4_COLLECTREADCOUNTS                   } from '../modules/nf-core/gatk4/collectreadcounts'
 include { GATK4_CREATEREADCOUNTPANELOFNORMALS       } from '../modules/nf-core/gatk4/createreadcountpanelofnormals'
 include { GATK4_DENOISEREADCOUNTS                   } from '../modules/nf-core/gatk4/denoisereadcounts'
@@ -204,6 +205,12 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     ch_gatk4_variantrecalibrator_input_2 = channel.fromPath(gatk4_resources + '/*.vcf???').collect()
     ch_gatk4_variantrecalibrator_input_3 = channel.fromPath(gatk4_resources + '/*.tbi').collect()
     GATK4_VARIANTRECALIBRATOR(ch_gatk4_variantrecalibrator_input_1, ch_gatk4_variantrecalibrator_input_2, ch_gatk4_variantrecalibrator_input_3, channel.value(gatk4_resource_labels.split(';')), ch_gatk4_preprocessintervals_input_1.map{ meta, fasta -> fasta }, ch_fai_to_chr_sizes_input.map{ meta, fai -> fai }, ch_gatk4_preprocessintervals_input_2.map{ meta, dict -> dict })
+
+    //
+    // MODULE: Run gatk4/applyvqsr
+    //
+    ch_gatk4_applyvqsr_input = ch_gatk4_variantrecalibrator_input_1.join(GATK4_VARIANTRECALIBRATOR.out.recal).join(GATK4_VARIANTRECALIBRATOR.out.idx).join(GATK4_VARIANTRECALIBRATOR.out.tranches)
+    GATK4_APPLYVQSR(ch_gatk4_applyvqsr_input, ch_gatk4_preprocessintervals_input_1.map{ meta, fasta -> fasta }, ch_fai_to_chr_sizes_input.map{ meta, fai -> fai }, ch_gatk4_preprocessintervals_input_2.map{ meta, dict -> dict })
 
     //
     // Collate and save software versions
