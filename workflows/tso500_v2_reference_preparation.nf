@@ -51,7 +51,7 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     // MODULE: Run bedtools/slop
     //
     ch_bedtools_slop_input = SORT_BED.out.bed.map{ meta, bed -> [ [ id: meta.id + '_slop' ], bed ] }
-    BEDTOOLS_SLOP(ch_bedtools_slop_input, FAI_TO_CHR_SIZES.out.tsv)
+    BEDTOOLS_SLOP(ch_bedtools_slop_input, FAI_TO_CHR_SIZES.out.sorted_tsv.first())
 
     //
     // MODULE: Run bedtools/subtract
