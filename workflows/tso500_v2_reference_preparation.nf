@@ -216,7 +216,7 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     //
     // MODULE: Run bcftools/norm
     //
-    ch_bcftools_norm_input = GATK4_APPLYVQSR.out.vcf.join(GATK4_APPLYVQSR.out.tbi).view()
+    ch_bcftools_norm_input = GATK4_APPLYVQSR.out.vcf.join(GATK4_APPLYVQSR.out.tbi)
     BCFTOOLS_NORM(ch_bcftools_norm_input, ch_gatk4_preprocessintervals_input_1)
 
     //
