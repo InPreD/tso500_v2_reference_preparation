@@ -51,7 +51,6 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     main:
 
     def ch_versions = channel.empty()
-    .view()
     //
     // MODULE: Run fai to chromosome sizes
     //
