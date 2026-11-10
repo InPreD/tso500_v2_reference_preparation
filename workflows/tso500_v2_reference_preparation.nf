@@ -51,11 +51,17 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     main:
 
     def ch_versions = channel.empty()
+    def ch_reference_simple = channel.fromPath(reference).first()
+    def ch_reference = ch_reference_simple.map{ fasta -> [ [ id: fasta.simpleName ], fasta ] }
+    def ch_reference_dict_simple = channel.fromPath(reference_dict).first()
+    def ch_reference_dict = ch_reference_dict_simple.map{ dict -> [ [ id: dict.simpleName ], dict ] }
+    def ch_reference_fai_simple = channel.fromPath(reference_fai).first()
+    def ch_reference_fai = ch_reference_fai_simple.map{ fai -> [ [ id: fai.simpleName ], fai ] }
+
     //
     // MODULE: Run fai to chromosome sizes
     //
-    ch_fai_to_chr_sizes_input = channel.fromPath(reference_fai).map{ fai -> [ [ id: fai.simpleName ], fai ] }.first()
-    FAI_TO_CHR_SIZES(ch_fai_to_chr_sizes_input)
+    FAI_TO_CHR_SIZES(ch_reference_fai)
 
     //
     // MODULE: Run sort
@@ -147,9 +153,7 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     //
     // MODULE: Run gatk4/preprocessintervals
     //
-    ch_gatk4_preprocessintervals_input_1 = channel.fromPath(reference).map{ fa -> [ [ id: fa.simpleName ], fa ] }.first()
-    ch_gatk4_preprocessintervals_input_2 = channel.fromPath(reference_dict).map{ dict -> [ [ id: dict.simpleName ], dict ] }.first()
-    GATK4_PREPROCESSINTERVALS(ch_gatk4_preprocessintervals_input_1, ch_fai_to_chr_sizes_input, ch_gatk4_preprocessintervals_input_2, SPLIT_TARGETS.out.bed, channel.value([ [], [] ]))
+    GATK4_PREPROCESSINTERVALS(ch_reference, ch_reference_fai, ch_reference_dict, SPLIT_TARGETS.out.bed, channel.value([ [], [] ]))
 
     //
     // MODULE: Run gatk4/addorreplacereadgroups
@@ -177,7 +181,7 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     // MODULE: Run gatk4/haplotypecaller
     //
     ch_gatk4_haplotypecaller_input = ch_gatk4_collectreadcounts_input.map{ meta, bam, bai, list -> [ meta, bam, bai, list, [] ]}
-    GATK4_HAPLOTYPECALLER(ch_gatk4_haplotypecaller_input, ch_gatk4_preprocessintervals_input_1,  ch_fai_to_chr_sizes_input, ch_gatk4_preprocessintervals_input_2, channel.value([ [], [] ]), channel.value([ [], [] ]))
+    GATK4_HAPLOTYPECALLER(ch_gatk4_haplotypecaller_input, ch_reference,  ch_reference_fai, ch_reference_dict, channel.value([ [], [] ]), channel.value([ [], [] ]))
 
     //
     // MODULE: Run gatk4/genomicsdbimport
@@ -196,7 +200,7 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     // MODULE: Run gatk4/genotypegvcfs
     //
     ch_gatk4_gentypegvcfs_input = GATK4_GENOMICSDBIMPORT.out.genomicsdb.map{ meta, db -> [ meta, db, [], [], [] ] }
-    GATK4_GENOTYPEGVCFS(ch_gatk4_gentypegvcfs_input, ch_gatk4_preprocessintervals_input_1, ch_fai_to_chr_sizes_input, ch_gatk4_preprocessintervals_input_2, channel.value([ [], [] ]), channel.value([ [], [] ]))
+    GATK4_GENOTYPEGVCFS(ch_gatk4_gentypegvcfs_input, ch_reference, ch_reference_fai, ch_reference_dict, channel.value([ [], [] ]), channel.value([ [], [] ]))
 
     //
     // MODULE: Run gatk4/variantrecalibrator
@@ -204,19 +208,19 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     ch_gatk4_variantrecalibrator_input_1 = GATK4_GENOTYPEGVCFS.out.vcf.join(GATK4_GENOTYPEGVCFS.out.tbi)
     ch_gatk4_variantrecalibrator_input_2 = channel.fromPath(gatk4_resources + '/*.vcf???').collect()
     ch_gatk4_variantrecalibrator_input_3 = channel.fromPath(gatk4_resources + '/*.tbi').collect()
-    GATK4_VARIANTRECALIBRATOR(ch_gatk4_variantrecalibrator_input_1, ch_gatk4_variantrecalibrator_input_2, ch_gatk4_variantrecalibrator_input_3, channel.value(gatk4_resource_labels.split(';')), ch_gatk4_preprocessintervals_input_1.map{ meta, fasta -> fasta }, ch_fai_to_chr_sizes_input.map{ meta, fai -> fai }, ch_gatk4_preprocessintervals_input_2.map{ meta, dict -> dict })
+    GATK4_VARIANTRECALIBRATOR(ch_gatk4_variantrecalibrator_input_1, ch_gatk4_variantrecalibrator_input_2, ch_gatk4_variantrecalibrator_input_3, channel.value(gatk4_resource_labels.split(';')), ch_reference_simple, ch_reference_fai_simple, ch_reference_dict_simple)
 
     //
     // MODULE: Run gatk4/applyvqsr
     //
     ch_gatk4_applyvqsr_input = ch_gatk4_variantrecalibrator_input_1.join(GATK4_VARIANTRECALIBRATOR.out.recal).join(GATK4_VARIANTRECALIBRATOR.out.idx).join(GATK4_VARIANTRECALIBRATOR.out.tranches)
-    GATK4_APPLYVQSR(ch_gatk4_applyvqsr_input, ch_gatk4_preprocessintervals_input_1.map{ meta, fasta -> fasta }, ch_fai_to_chr_sizes_input.map{ meta, fai -> fai }, ch_gatk4_preprocessintervals_input_2.map{ meta, dict -> dict })
+    GATK4_APPLYVQSR(ch_gatk4_applyvqsr_input, ch_reference_simple, ch_reference_fai_simple, ch_reference_dict_simple)
 
     //
     // MODULE: Run bcftools/norm
     //
     ch_bcftools_norm_input = GATK4_APPLYVQSR.out.vcf.join(GATK4_APPLYVQSR.out.tbi)
-    BCFTOOLS_NORM(ch_bcftools_norm_input, ch_gatk4_preprocessintervals_input_1)
+    BCFTOOLS_NORM(ch_bcftools_norm_input, ch_reference)
 
     //
     // Collate and save software versions
