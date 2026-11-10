@@ -10,7 +10,7 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": ["input", "panel_bed", "reference", "reference_dict", "reference_fai", "outdir"],
+            "required": ["input", "panel_bed", "reference", "reference_dict", "gatk4_resources", "gatk4_resource_labels",  "reference_fai", "outdir"],
             "properties": {
                 "input": {
                     "type": "string",
