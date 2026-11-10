@@ -12,10 +12,10 @@ jobs:
         name: Check out the repo
         uses: actions/checkout@v7
       -
-        name: Set up Python 3.14.0
+        name: Set up Python 3.15.2
         uses: actions/setup-python@v7
         with:
-          python-version: 3.14.3
+          python-version: 3.15.2
       - 
         name: Install dependencies
         run: pip install pytest==9.1.1 pytest-emoji==0.2.0 pytest-md==0.2.0
@@ -37,10 +37,10 @@ jobs:
         name: Check out the repo
         uses: actions/checkout@v7
       -
-        name: Set up Python 3.14.3
+        name: Set up Python 3.15.2
         uses: actions/setup-python@v7
         with:
-          python-version: 3.14.3
+          python-version: 3.15.2
       -
         name: Install dependencies
         run: pip install ruff==0.16.6
