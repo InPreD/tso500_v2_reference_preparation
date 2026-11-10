@@ -51,6 +51,22 @@
                     "help_text": "A fasta index file can be created by running samtools faidx on a reference fasta file.",
                     "fa_icon": "fas fa-file"
                 },
+                "minimum_size": {
+                    "type": "integer",
+                    "default": 250,
+                    "minimum": 0,
+                    "description": "Minimum size in bp of the output intervals.",
+                    "help_text": "Defines the minimum size for the splitting of target regions.",
+                    "fa_icon": "fas fa-input-numeric"
+                },
+                "standard_size": {
+                    "type": "integer",
+                    "default": 400,
+                    "minimum": 0,
+                    "description": "Standard size in bp of the output intervals.",
+                    "help_text": "Defines the standard size for the splitting of target regions.",
+                    "fa_icon": "fas fa-input-numeric"
+                },
                 "outdir": {
                     "type": "string",
                     "format": "directory-path",
