@@ -140,7 +140,7 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     ch_position_count_input = ch_position_count_input.combine(SPLIT_TARGETS.out.bed.map{ meta, bed -> bed }).map{ meta, bed1, bed2 -> [ meta, bed1 + [ bed2 ] ] }
 
     //
-    // MODULE: Run split_targets
+    // MODULE: Run position_count
     //
     POSITION_COUNT(ch_position_count_input, FAI_TO_CHR_SIZES.out.tsv)
 
