@@ -62,7 +62,7 @@
                     "format": "file-path",
                     "exists": true,
                     "mimetype": "text/plain",
-                    "pattern": "^\\S+\\.f[a,asta,na]$",
+                    "pattern": "^\\S+\\.f(a|asta|na)$",
                     "description": "Path to .fa/.fasta/.fna file containing reference used in alignment.",
                     "help_text": "Reference fasta file.",
                     "fa_icon": "fas fa-file"
