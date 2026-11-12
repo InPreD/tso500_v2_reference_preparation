@@ -15,6 +15,7 @@ include { EXTRACT_FILTERED_GATK_CALLS               } from '../modules/local/ext
 include { FAI_TO_CHR_SIZES                          } from '../modules/local/fai_to_chr_sizes'
 include { GATK4_ADDORREPLACEREADGROUPS              } from '../modules/nf-core/gatk4/addorreplacereadgroups'
 include { GATK4_APPLYVQSR                           } from '../modules/nf-core/gatk4/applyvqsr'
+include { GATK4_COLLECTALLELICCOUNTS                } from '../modules/local/gatk4_collectalleliccounts'
 include { GATK4_COLLECTREADCOUNTS                   } from '../modules/nf-core/gatk4/collectreadcounts'
 include { GATK4_CREATEREADCOUNTPANELOFNORMALS       } from '../modules/nf-core/gatk4/createreadcountpanelofnormals'
 include { GATK4_DENOISEREADCOUNTS                   } from '../modules/nf-core/gatk4/denoisereadcounts'
@@ -423,6 +424,20 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
             [ meta, vcf, [], [] ]
         }
     HTSLIB_BGZIPTABIX(ch_htslib_bgziptabix_input, channel.value("compress"), channel.value(true), channel.value("vcf"))
+
+    //
+    // MODULE: Run gatk4/collectalleliccounts
+    //
+    def ch_gatk4_collectalleliccounts_input = GATK4_ADDORREPLACEREADGROUPS.out.bam
+        // add gatk4 extract_filtered_gatk_calls output bed
+        .combine(
+            EXTRACT_FILTERED_GATK_CALLS.out.bed
+                // remove meta object from interval list
+                .map{ meta, bed ->
+                    bed
+                }
+        )
+    GATK4_COLLECTALLELICCOUNTS(ch_gatk4_collectalleliccounts_input, ch_reference, ch_reference_fai)
 
     //
     // Collate and save software versions
