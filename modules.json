@@ -75,6 +75,12 @@
                         "git_sha": "7b3452a23773f687ededb4befd037920e5a51341",
                         "installed_by": ["modules"]
                     },
+                    "gatk4/modelsegments": {
+                        "branch": "master",
+                        "git_sha": "3ecf9eb9ab27caca69736d3d411a60d53c3383e1",
+                        "installed_by": ["modules"],
+                        "patch": "modules/nf-core/gatk4/modelsegments/gatk4-modelsegments.diff"
+                    },
                     "gatk4/preprocessintervals": {
                         "branch": "master",
                         "git_sha": "7cdf77024900a466c05f34620e2e415b8c5acf25",

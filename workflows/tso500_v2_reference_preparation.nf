@@ -22,6 +22,7 @@ include { GATK4_DENOISEREADCOUNTS                   } from '../modules/nf-core/g
 include { GATK4_GENOMICSDBIMPORT                    } from '../modules/nf-core/gatk4/genomicsdbimport'
 include { GATK4_GENOTYPEGVCFS                       } from '../modules/nf-core/gatk4/genotypegvcfs'
 include { GATK4_HAPLOTYPECALLER                     } from '../modules/nf-core/gatk4/haplotypecaller'
+include { GATK4_MODELSEGMENTS                       } from '../modules/nf-core/gatk4/modelsegments'
 include { GATK4_PREPROCESSINTERVALS                 } from '../modules/nf-core/gatk4/preprocessintervals'
 include { GATK4_VARIANTRECALIBRATOR                 } from '../modules/nf-core/gatk4/variantrecalibrator'
 include { HTSLIB_BGZIPTABIX                         } from '../modules/nf-core/htslib/bgziptabix'
@@ -438,6 +439,14 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
                 }
         )
     GATK4_COLLECTALLELICCOUNTS(ch_gatk4_collectalleliccounts_input, ch_reference, ch_reference_fai)
+
+    //
+    // MODULE: Run gatk4/modelsegments
+    //
+    def ch_gatk4_modelsegments_input = GATK4_DENOISEREADCOUNTS.out.denoised
+        // join gatk4 collectalleliccounts output tsv according to meta object
+        .join(GATK4_COLLECTALLELICCOUNTS.out.tsv)
+    GATK4_MODELSEGMENTS(ch_gatk4_modelsegments_input)
 
     //
     // Collate and save software versions
