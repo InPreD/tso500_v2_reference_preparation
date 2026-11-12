@@ -11,7 +11,7 @@ jobs:
       options: --user root
     steps:
       - name: Install tar
-        run: yum install -y tar gzip
+        run: yum install -y tar gzip tabix
       - name: Check out pipeline code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - name: Stubbing
