@@ -23,6 +23,7 @@ include { GATK4_GENOTYPEGVCFS                       } from '../modules/nf-core/g
 include { GATK4_HAPLOTYPECALLER                     } from '../modules/nf-core/gatk4/haplotypecaller'
 include { GATK4_PREPROCESSINTERVALS                 } from '../modules/nf-core/gatk4/preprocessintervals'
 include { GATK4_VARIANTRECALIBRATOR                 } from '../modules/nf-core/gatk4/variantrecalibrator'
+include { HTSLIB_BGZIPTABIX                         } from '../modules/nf-core/htslib/bgziptabix'
 include { POSITION_COUNT                            } from '../modules/local/position_count'
 include { SORT as SORT_BED                          } from '../modules/local/sort'
 include { SORT as SORT_SUBTRACT                     } from '../modules/local/sort'
@@ -412,6 +413,16 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
     // MODULE: Run extract_filtered_gatk_calls
     //
     EXTRACT_FILTERED_GATK_CALLS(BCFTOOLS_NORM.out.vcf)
+
+    //
+    // MODULE: Run htslib/bgziptabix
+    //
+    def ch_htslib_bgziptabix_input = EXTRACT_FILTERED_GATK_CALLS.out.vcf
+        // add two empty lists to list of vcf files
+        .map{ meta, vcf ->
+            [ meta, vcf, [], [] ]
+        }
+    HTSLIB_BGZIPTABIX(ch_htslib_bgziptabix_input, channel.value("compress"), channel.value(true), channel.value("vcf"))
 
     //
     // Collate and save software versions

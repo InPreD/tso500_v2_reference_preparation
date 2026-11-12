@@ -84,6 +84,11 @@
                         "branch": "master",
                         "git_sha": "7b3452a23773f687ededb4befd037920e5a51341",
                         "installed_by": ["modules"]
+                    },
+                    "htslib/bgziptabix": {
+                        "branch": "master",
+                        "git_sha": "0fc371314e7612fa13b8164bd86b53683a59a8f0",
+                        "installed_by": ["modules"]
                     }
                 }
             },
