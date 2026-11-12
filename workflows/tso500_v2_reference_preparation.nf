@@ -11,6 +11,7 @@ include { BEDTOOLS_MERGE as BEDTOOLS_MERGE_EXTEND   } from '../modules/nf-core/b
 include { BEDTOOLS_SLOP                             } from '../modules/nf-core/bedtools/slop'
 include { BEDTOOLS_SUBTRACT                         } from '../modules/nf-core/bedtools/subtract'
 include { EXTEND_TARGETS                            } from '../modules/local/extend_targets'
+include { EXTRACT_FILTERED_GATK_CALLS               } from '../modules/local/extract_filtered_gatk_calls'
 include { FAI_TO_CHR_SIZES                          } from '../modules/local/fai_to_chr_sizes'
 include { GATK4_ADDORREPLACEREADGROUPS              } from '../modules/nf-core/gatk4/addorreplacereadgroups'
 include { GATK4_APPLYVQSR                           } from '../modules/nf-core/gatk4/applyvqsr'
@@ -406,6 +407,11 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
         // join gatk4 applyvqsr output tbi according to meta object
         .join(GATK4_APPLYVQSR.out.tbi)
     BCFTOOLS_NORM(ch_bcftools_norm_input, ch_reference)
+
+    //
+    // MODULE: Run extract_filtered_gatk_calls
+    //
+    EXTRACT_FILTERED_GATK_CALLS(BCFTOOLS_NORM.out.vcf)
 
     //
     // Collate and save software versions
