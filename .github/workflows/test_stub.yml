@@ -10,8 +10,17 @@ jobs:
       image: nextflow/nextflow:26.04.6
       options: --user root
     steps:
-      - name: Install tar
-        run: yum install -y tar gzip tabix
+      - name: Install tar and gzip
+        run: yum install -y tar gzip
+      - name: Install bgzip
+        run: |
+          yum install -y git autoconf automake make gcc zlib-devel bzip2-devel xz-devel;
+          git clone https://github.com/samtools/htslib.git;
+          cd htslib;
+          git submodule update --init --recursive;
+          bash autoreconf -i;
+          bash ./configure make;
+          make install;
       - name: Check out pipeline code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - name: Stubbing
