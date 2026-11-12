@@ -8,8 +8,8 @@ process EXTRACT_FILTERED_GATK_CALLS {
     tuple val(meta), path(vcf)
 
     output:
-    path("*.tsv"), emit: tsv
-    path("*.vcf"), emit: vcf
+    tuple val(meta), path("*.bed"), emit: bed
+    tuple val(meta), path("*.vcf"), emit: vcf
     tuple val("${task.process}"), val('extract_filtered_gatk_calls.py'), val("${workflow.manifest.version}"), topic: versions, emit: versions_extract_filtered_gatk_calls_py
     tuple val("${task.process}"), val('python'), eval("python -V | sed 's/Python //'"), topic: versions, emit: versions_python
 
