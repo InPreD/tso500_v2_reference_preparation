@@ -12,6 +12,14 @@
             "description": "Define where the pipeline should find input data and save output data.",
             "required": ["input", "panel_bed", "reference", "reference_dict", "gatk4_resources", "gatk4_resource_labels",  "reference_fai", "outdir"],
             "properties": {
+                "extension_limit": {
+                    "type": "integer",
+                    "default": 250,
+                    "minimum": 0,
+                    "description": "Limit for target extension.",
+                    "help_text": "Defines the limit for the extension of target regions.",
+                    "fa_icon": "fas fa-input-numeric"
+                },
                 "input": {
                     "type": "string",
                     "format": "file-path",
@@ -22,24 +30,6 @@
                     "description": "Path to comma-separated file containing information about the samples in the experiment.",
                     "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row.",
                     "fa_icon": "fas fa-file-csv"
-                },
-                "extension_limit": {
-                    "type": "integer",
-                    "default": 250,
-                    "minimum": 0,
-                    "description": "Limit for target extension.",
-                    "help_text": "Defines the limit for the extension of target regions.",
-                    "fa_icon": "fas fa-input-numeric"
-                },
-                "panel_bed": {
-                    "type": "string",
-                    "format": "file-path",
-                    "exists": true,
-                    "mimetype": "text/bed",
-                    "pattern": "^\\S+\\.bed$",
-                    "description": "Path to bed file containing all panel target regions.",
-                    "help_text": "This file is obtained from the provider of the panel (e.g. illumina).",
-                    "fa_icon": "fas fa-file"
                 },
                 "gatk4_resource_labels": {
                     "type": "string",
@@ -56,6 +46,32 @@
                     "description": "Directory containing resource vcf/vcf.gz files for GATK4 VariantRecalibrator.",
                     "help_text": "This parameter is used to specify the resource vcfs for the GATK4 VariantRecalibrator step. It should be a directory containing vcf/vcf.gz files corresponding to the labels used in the recalibration process.",
                     "fa_icon": "fas fa-folder"
+                },
+                "minimum_depth": {
+                    "type": "integer",
+                    "default": 50,
+                    "minimum": 0,
+                    "description": "Minimum depth fot filtering .hets.tsv file.",
+                    "help_text": "Defines the minimum depth to be considered for filtering the allelic-counts file containing the counts at sites genotyped as heterozygous in the case sample.",
+                    "fa_icon": "fas fa-input-numeric"
+                },
+                "minimum_size": {
+                    "type": "integer",
+                    "default": 250,
+                    "minimum": 0,
+                    "description": "Minimum size in bp of the output intervals.",
+                    "help_text": "Defines the minimum size for the splitting of target regions.",
+                    "fa_icon": "fas fa-input-numeric"
+                },
+                "panel_bed": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "mimetype": "text/bed",
+                    "pattern": "^\\S+\\.bed$",
+                    "description": "Path to bed file containing all panel target regions.",
+                    "help_text": "This file is obtained from the provider of the panel (e.g. illumina).",
+                    "fa_icon": "fas fa-file"
                 },
                 "reference": {
                     "type": "string",
@@ -86,14 +102,6 @@
                     "description": "Path to .fai file for reference used in alignment.",
                     "help_text": "A fasta index file can be created by running samtools faidx on a reference fasta file.",
                     "fa_icon": "fas fa-file"
-                },
-                "minimum_size": {
-                    "type": "integer",
-                    "default": 250,
-                    "minimum": 0,
-                    "description": "Minimum size in bp of the output intervals.",
-                    "help_text": "Defines the minimum size for the splitting of target regions.",
-                    "fa_icon": "fas fa-input-numeric"
                 },
                 "standard_size": {
                     "type": "integer",

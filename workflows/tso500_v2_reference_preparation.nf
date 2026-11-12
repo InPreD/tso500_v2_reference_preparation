@@ -13,6 +13,7 @@ include { BEDTOOLS_SUBTRACT                         } from '../modules/nf-core/b
 include { EXTEND_TARGETS                            } from '../modules/local/extend_targets'
 include { EXTRACT_FILTERED_GATK_CALLS               } from '../modules/local/extract_filtered_gatk_calls'
 include { FAI_TO_CHR_SIZES                          } from '../modules/local/fai_to_chr_sizes'
+include { FILTER_HETS_TSV                           } from '../modules/local/filter_hets_tsv'
 include { GATK4_ADDORREPLACEREADGROUPS              } from '../modules/nf-core/gatk4/addorreplacereadgroups'
 include { GATK4_APPLYVQSR                           } from '../modules/nf-core/gatk4/applyvqsr'
 include { GATK4_COLLECTALLELICCOUNTS                } from '../modules/local/gatk4_collectalleliccounts'
@@ -44,9 +45,10 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
 
     take:
     ch_samplesheet // channel: samplesheet read in from --input
-    panel_bed
     gatk4_resource_labels
     gatk4_resources
+    minimum_depth
+    panel_bed
     reference
     reference_dict
     reference_fai
@@ -447,6 +449,11 @@ workflow TSO500_V2_REFERENCE_PREPARATION {
         // join gatk4 collectalleliccounts output tsv according to meta object
         .join(GATK4_COLLECTALLELICCOUNTS.out.tsv)
     GATK4_MODELSEGMENTS(ch_gatk4_modelsegments_input)
+
+    //
+    // MODULE: Run filter_hets_tsv
+    //
+    FILTER_HETS_TSV(GATK4_MODELSEGMENTS.out.tsv, channel.value(minimum_depth))
 
     //
     // Collate and save software versions
