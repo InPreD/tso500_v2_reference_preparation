@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Parsing input multi-sample VCF, extracting only PASS SNV/MNV (germline) calls with sufficient support in >=n samples. 
+"""Parsing input multi-sample VCF, extracting only PASS SNV/MNV (germline) calls with sufficient support in >=n samples.
 Saving the output in both VCF and BED-like TSV formats."""
 
 import argparse
-import logging
 import gzip
+import logging
 import sys
 
 # Set up logging. The logging level is set to INFO, and the log messages will include the timestamp, log level, and message.
@@ -34,17 +34,28 @@ def main():
     )
 
     # [required arguments]
-    arg_parser.add_argument("-i", "--input_vcf", required=True,
-                            help="Path to the input VCF file.")
-    arg_parser.add_argument("-o", "--output_tsv", required=True,
-                            help="Path to the output TSV file.")
-    arg_parser.add_argument("-p", "--output_vcf", required=True,
-                            help="Path to the output VCF file.")
+    arg_parser.add_argument(
+        "-i", "--input_vcf", required=True, help="Path to the input VCF file."
+    )
+    arg_parser.add_argument(
+        "-o", "--output_tsv", required=True, help="Path to the output TSV file."
+    )
+    arg_parser.add_argument(
+        "-p", "--output_vcf", required=True, help="Path to the output VCF file."
+    )
     # [optional arguments]
-    arg_parser.add_argument("-r", "--min_read_count", default=5,
-                            help="The number of variant-supporting reads required for considering a variant present in given sample (values >0 expected).")
-    arg_parser.add_argument("-s", "--min_sample_count", default=5,
-                            help="Only PASS variants present in at least this many samples will be extracted (values >0 expected).")
+    arg_parser.add_argument(
+        "-r",
+        "--min_read_count",
+        default=5,
+        help="The number of variant-supporting reads required for considering a variant present in given sample (values >0 expected).",
+    )
+    arg_parser.add_argument(
+        "-s",
+        "--min_sample_count",
+        default=5,
+        help="Only PASS variants present in at least this many samples will be extracted (values >0 expected).",
+    )
 
     arg_dict = vars(arg_parser.parse_args())
 
@@ -56,28 +67,54 @@ def main():
 
     # Check selected parameter values. In case of unreasonable values, exit with a helpful message.
     if min_read_count < 1 or min_sample_count < 1:
-        logger.error("Please make sure that supplied 'min_read_count' and 'min_sample_count' values are > 0. Exiting.")
+        logger.error(
+            "Please make sure that supplied 'min_read_count' and 'min_sample_count' values are > 0. Exiting."
+        )
         sys.exit(1)
 
-    with gzip.open(input_vcf_path, "rt") as ivcf_file, \
-        open(output_tsv_path, "w") as otsv_file, \
-        open(output_vcf_path, "w") as ovcf_file:
-
+    with (
+        gzip.open(input_vcf_path, "rt") as ivcf_file,
+        open(output_tsv_path, "w") as otsv_file,
+        open(output_vcf_path, "w") as ovcf_file,
+    ):
         for line in ivcf_file:
             line_s = line.strip().split("\t")
 
             # print the header lines to the VCF output without change
-            if (line_s[0][0] == "#"):
+            if line_s[0][0] == "#":
                 ovcf_file.write(line)
             else:
                 chrom = line_s[0]
 
                 # skip variants outside the autosomes and sex chromosomes
-                if (chrom not in ["chr1",  "chr2",  "chr3",  "chr4",  "chr5",  "chr6",  "chr7",  "chr8",  "chr9",  "chr10",
-                                  "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20",
-                                  "chr21", "chr22", "chrX",  "chrY"]):
+                if chrom not in [
+                    "chr1",
+                    "chr2",
+                    "chr3",
+                    "chr4",
+                    "chr5",
+                    "chr6",
+                    "chr7",
+                    "chr8",
+                    "chr9",
+                    "chr10",
+                    "chr11",
+                    "chr12",
+                    "chr13",
+                    "chr14",
+                    "chr15",
+                    "chr16",
+                    "chr17",
+                    "chr18",
+                    "chr19",
+                    "chr20",
+                    "chr21",
+                    "chr22",
+                    "chrX",
+                    "chrY",
+                ]:
                     continue
-                
+
                 pos_one = line_s[1]
                 pos_zero = str(int(line_s[1]) - 1)
                 ref = line_s[3]
@@ -92,7 +129,11 @@ def main():
                 AD_index = format_tags.index("AD")
 
                 # create a dictionary with INFO field items that have 'key=value' structure
-                info_dict = {item.split("=")[0]:item.split("=")[1] for item in info_fields if "=" in item}
+                info_dict = {
+                    item.split("=")[0]: item.split("=")[1]
+                    for item in info_fields
+                    if "=" in item
+                }
 
                 # skip variants with missing 'AC' and/or 'AS_FilterStatus' INFO field items
                 if "AS_FilterStatus" not in info_dict or "AC" not in info_dict:
@@ -119,18 +160,26 @@ def main():
                         sample_format_values = sample_field.split(":")
                         AD_output = sample_format_values[AD_index]
                         alt_AD_value = AD_output.split(",")[alt_index + 1]
-                        if (int(alt_AD_value) < min_read_count):
+                        if int(alt_AD_value) < min_read_count:
                             AD_output = "./."
                         else:
                             sample_count += 1
-                        ovcf_line.append(":".join(sample_format_values[:AD_index] + [AD_output] + sample_format_values[AD_index+1:]))
+                        ovcf_line.append(
+                            ":".join(
+                                sample_format_values[:AD_index]
+                                + [AD_output]
+                                + sample_format_values[AD_index + 1 :]
+                            )
+                        )
 
                     # output information for variants present in enough samples
-                    if (sample_count >= min_sample_count):
+                    if sample_count >= min_sample_count:
                         ovcf_file.write("\t".join(ovcf_line) + "\n")
 
                         var_id = f"{chrom}:{pos_one}:{ref}:{alt}"
-                        otsv_file.write("\t".join([chrom, pos_zero, pos_one, var_id, ref, alt, allelic_count]) + "\n")
+                        otsv_file.write(
+                            f"{chrom}\t{pos_zero}\t{pos_one}\t{var_id}\t{ref}\t{alt}\t{allelic_count}\n"
+                        )
 
 
 if __name__ == "__main__":
