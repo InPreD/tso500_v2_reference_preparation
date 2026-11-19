@@ -33,7 +33,7 @@ workflow EXPAND_TARGETS {
     take:
     ch_reference_fai // channel: reference fai file
     ch_samplesheet   // channel: samplesheet read in from --input
-    panel_bed        // channel: path to panel bed file
+    panel_bed        // string: path to panel bed file
 
     main:
 
