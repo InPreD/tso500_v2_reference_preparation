@@ -1,0 +1,41 @@
+Changes in component 'nf-core/gatk4/modelsegments'
+'modules/nf-core/gatk4/modelsegments/meta.yml' is unchanged
+'modules/nf-core/gatk4/modelsegments/environment.yml' is unchanged
+Changes in 'gatk4/modelsegments/main.nf':
+--- modules/nf-core/gatk4/modelsegments/main.nf
++++ modules/nf-core/gatk4/modelsegments/main.nf
+@@ -11,10 +11,11 @@
+         : 'community.wave.seqera.io/library/gatk4-lite:4.7.0.0--79918b8b2632f4b1'}"
+ 
+     input:
+-    tuple val(meta), path(counts)
++    tuple val(meta), path(counts), path(tsv)
+ 
+     output:
+     tuple val(meta), path("*.modelFinal.seg"), emit: segmented
++    tuple val(meta), path("*.hets.tsv"), emit: tsv
+     tuple val("${task.process}"), val('gatk4'), eval("gatk --version | sed -n '/GATK.*v/s/.*v//p'"), topic: versions, emit: versions_gatk4
+ 
+     when:
+@@ -36,6 +37,7 @@
+         ${args} \\
+         --tmp-dir . \\
+         --denoised-copy-ratios ${counts} \\
++        --allelic-counts ${tsv} \\
+         -O ./ \\
+         --output-prefix ${prefix}
+     """
+@@ -43,6 +45,6 @@
+     stub:
+     def prefix = task.ext.prefix ?: "${meta.id}"
+     """
+-    touch ${prefix}.modelFinal.seg
++    touch ${prefix}.modelFinal.seg ${prefix}.hets.tsv
+     """
+ }
+
+'modules/nf-core/gatk4/modelsegments/.conda-lock/linux_amd64-bd-79918b8b2632f4b1_1.txt' is unchanged
+'modules/nf-core/gatk4/modelsegments/tests/main.nf.test' is unchanged
+'modules/nf-core/gatk4/modelsegments/tests/nextflow.config' is unchanged
+'modules/nf-core/gatk4/modelsegments/tests/main.nf.test.snap' is unchanged
+************************************************************
