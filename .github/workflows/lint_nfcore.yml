@@ -13,4 +13,6 @@ jobs:
       - name: Check out pipeline code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - name: Linting
-        run: nf-core pipeline lint
+        run: |
+          git config --global --add safe.directory /__w/tso500_v2_reference_preparation/tso500_v2_reference_preparation;
+          nf-core pipeline lint;
