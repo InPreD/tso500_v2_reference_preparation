@@ -1,0 +1,78 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+name: "NORMAL_GATK_PREPROCESSING"
+description: Subworkflow with functionality to normal GATK preprocessing
+keywords:
+  - pipeline
+  - tso500
+  - pon
+components:
+  - bcftools/norm
+  - extract/filtered/gatk/calls
+  - filter/hets/tsv
+  - gatk4/addorreplacereadgroups
+  - gatk4/applyvqsr
+  - gatk4/collectalleliccounts
+  - gatk4/collectreadcounts
+  - gatk4/createreadcountpanelofnormals
+  - gatk4/denoisereadcounts
+  - gatk4/genomicsdbimport
+  - gatk4/genotypegvcfs
+  - gatk4/haplotypecaller
+  - gatk4/modelsegments
+  - gatk4/preprocessintervals
+  - gatk4/variantrecalibrator
+  - htslib/bgziptabix
+input:
+  - ch_bed:
+      type: channel
+      description: |
+        Bed file.
+  - ch_reference:
+      type: channel
+      description: |
+        Reference file.
+  - ch_reference_simple:
+      type: channel
+      description: |
+        Reference file simplified.
+  - ch_reference_dict:
+      type: channel
+      description: |
+        Reference dict file.
+  - ch_reference_dict_simple:
+      type: channel
+      description: |
+        Reference dict file simplified.
+  - ch_reference_fai:
+      type: channel
+      description: |
+        Reference fai file.
+  - ch_reference_fai_simple:
+      type: channel
+      description: |
+        Reference fai file simplified.
+  - ch_samplesheet:
+      type: channel
+      description: |
+        Samplesheet read in from --input.
+  - gatk4_resource_labels:
+      type: string
+      description: |
+        Semicolon-separated list of resource labels for gatk4 variantrecalibrator.
+  - gatk4_resources:
+      type: string
+      description: |
+        Path to directory containing gatk4 resource files for gatk4 variantrecalibrator.
+  - minimum_depth:
+      type: integer
+      description: |
+        Minimum depth for filter_hets_tsv.
+output:
+  - versions:
+      type: channel
+      description: |
+        Containing version information.
+authors:
+  - "@marrip"
+maintainers:
+  - "@marrip"

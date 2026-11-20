@@ -1,4 +1,4 @@
-name: test_stub
+name: test stub nextflow pipeline
 on:
   push:
   pull_request:

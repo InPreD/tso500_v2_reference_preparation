@@ -1,0 +1,63 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+name: "PIPELINE_INITIALISATION"
+description: Subworkflow with functionality to initialise the tso500_v2_reference_preparation pipeline
+keywords:
+  - utility
+  - pipeline
+  - initialise
+  - version
+components:
+  - completionsummary
+  - utils_nextflow_pipeline
+  - utils_nfcore_pipeline
+  - utils_nfschema_plugin
+input:
+  - version:
+      type: boolean
+      description: |
+        Print the version of the pipeline and exit.
+  - validate_parameters:
+      type: boolean
+      description: |
+        Validate parameters against the schema at runtime.
+  - monochrome_logs:
+      type: boolean
+      description: |
+        Do not use coloured log outputs.
+  - nextflow_cli_args:
+      type: array
+      description: |
+        List of positional nextflow CLI args.
+  - outdir:
+      type: directory
+      description: |
+        The output directory where the results will be saved.
+  - input:
+      type: string
+      description: |
+        Path to input samplesheet.
+  - help:
+      type: boolean
+      description: |
+        Display help message and exit.
+  - help_full:
+      type: boolean
+      description: |
+        Show the full help message.
+  - show_hidden:
+      type: boolean
+      description: |
+        Show hidden parameters in the help message.
+output:
+  - samplesheet:
+      type: channel
+      description: |
+        Containing sample sheet information.
+  - versions:
+      type: channel
+      description: |
+        Containing version information.
+authors:
+  - "@marrip"
+maintainers:
+  - "@marrip"
