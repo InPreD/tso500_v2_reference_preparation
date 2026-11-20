@@ -1,0 +1,15 @@
+name: lint nf-core structure
+on:
+  push:
+  pull_request:
+
+jobs:
+  nextflow:
+    runs-on: ubuntu-latest
+    container:
+      image: nfcore/tools:4.1.0
+    steps:
+      - name: Check out pipeline code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - name: Linting
+        run: nf-core pipeline lint
