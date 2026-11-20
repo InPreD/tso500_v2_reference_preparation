@@ -4,7 +4,7 @@ on:
   pull_request:
 
 jobs:
-  nextflow:
+  nf-core:
     runs-on: ubuntu-latest
     container:
       image: nfcore/tools:4.1.0
@@ -13,4 +13,4 @@ jobs:
       - name: Check out pipeline code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - name: Linting
-        run: pipeline lint
+        run: nf-core pipeline lint
