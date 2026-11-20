@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/subworkflows/yaml-schema.json
+name: "EXPAND_TARGETS"
+description: Subworkflow with functionality to expand targets
+keywords:
+  - pipeline
+  - tso500
+  - pon
+components:
+  - bedtools/bamtobed
+  - bedtools/coverage
+  - bedtools/merge
+  - bedtools/slop
+  - bedtools/subtract
+  - extend/targets
+  - fai/to/chr/sizes
+  - position/count
+  - sort
+  - split/targets
+input:
+  - ch_reference_fai:
+      type: channel
+      description: |
+        Reference fai file.
+  - ch_samplesheet:
+      type: channel
+      description: |
+        Samplesheet read in from --input.
+  - panel_bed:
+      type: string
+      description: |
+        Path to panel bed file.
+output:
+  - bed:
+      type: channel
+      description: |
+        Containing bed file with expanded targets.
+  - versions:
+      type: channel
+      description: |
+        Containing version information.
+authors:
+  - "@marrip"
+maintainers:
+  - "@marrip"

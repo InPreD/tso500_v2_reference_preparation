@@ -1,0 +1,18 @@
+name: lint nf-core structure
+on:
+  push:
+  pull_request:
+
+jobs:
+  nf-core:
+    runs-on: ubuntu-latest
+    container:
+      image: nfcore/tools:4.1.0
+      options: --entrypoint /bin/bash
+    steps:
+      - name: Check out pipeline code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - name: Linting
+        run: |
+          git config --global --add safe.directory /__w/tso500_v2_reference_preparation/tso500_v2_reference_preparation;
+          nf-core pipeline lint;

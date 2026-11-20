@@ -4,61 +4,72 @@
 
 ## Introduction
 
-<!-- TODO nf-core: Add documentation about anything specific to running your pipeline. For general topics, please point to (and add to) the main nf-core website. -->
+This pipeline prepares reference files for the TSO500 v2 post-processing pipeline. It accepts normal-sample BAM files, a TSO500 panel BED file, and a matching reference genome.
+
+The main stages are:
+
+- Expand and split the panel target intervals.
+- Collect GATK4 read counts and allelic counts.
+- Create a panel of normals and denoise read counts.
+- Filter heterozygous sites and prepare intervals and files for downstream analysis.
 
 ## Samplesheet input
 
-You will need to create a samplesheet with information about the samples you would like to analyse before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row as shown in the examples below.
+Prepare a comma-separated samplesheet containing one row per normal sample:
+
+```csv title="samplesheet.csv"
+sample,sex,bam
+sample_1,M,/absolute/path/sample_1.bam
+sample_2,F,/absolute/path/sample_2.bam
+```
+
+Pass it using
 
 ```bash
---input '[path to samplesheet file]'
+--input '/absolute/path/samplesheet.csv'
 ```
 
-### Multiple runs of the same sample
+Column | Description
+--- | ---
+sample | Unique sample identifier without whitespace.
+sex | Sample sex. Accepted values are M, m, F, or f.
+bam | Path to the aligned BAM file. The path must exist and the filename must end in .bam.
 
-The `sample` identifiers have to be the same when you have re-sequenced the same sample more than once e.g. to increase sequencing depth. The pipeline will concatenate the raw reads before performing any downstream analysis. Below is an example for the same sample sequenced across 3 lanes:
+The BAM files should correspond to the supplied reference genome and should normally be coordinate-sorted and indexed. Sample names must be unique within the samplesheet.
 
-```csv title="samplesheet.csv"
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
-CONTROL_REP1,AEG588A1_S1_L003_R1_001.fastq.gz,AEG588A1_S1_L003_R2_001.fastq.gz
-CONTROL_REP1,AEG588A1_S1_L004_R1_001.fastq.gz,AEG588A1_S1_L004_R2_001.fastq.gz
-```
+An example is available at `assets/samplesheet.csv`.
 
-### Full samplesheet
+## Reference and panel inputs
 
-The pipeline will auto-detect whether a sample is single- or paired-end using the information provided in the samplesheet. The samplesheet can have as many columns as you desire, however, there is a strict requirement for the first 3 columns to match those defined in the table below.
+The pipeline requires the following files:
 
-A final samplesheet file consisting of both single- and paired-end data may look something like the one below. This is for 6 samples, where `TREATMENT_REP3` has been sequenced twice.
+- `--panel_bed`: TSO500 panel BED file.
+- `--reference`: Reference FASTA used for alignment.
+- `--reference_fai`: Index for the reference FASTA.
+- `--reference_dict`: Sequence dictionary for the reference FASTA.
+- `--gatk4_resources`: Directory containing GATK4 recalibration VCF/VCF.GZ resources.
+- `--gatk4_resource_labels`: Semicolon-separated GATK4 resource labels matching the resource filenames.
 
-```csv title="samplesheet.csv"
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
-CONTROL_REP2,AEG588A2_S2_L002_R1_001.fastq.gz,AEG588A2_S2_L002_R2_001.fastq.gz
-CONTROL_REP3,AEG588A3_S3_L002_R1_001.fastq.gz,AEG588A3_S3_L002_R2_001.fastq.gz
-TREATMENT_REP1,AEG588A4_S4_L003_R1_001.fastq.gz,
-TREATMENT_REP2,AEG588A5_S5_L003_R1_001.fastq.gz,
-TREATMENT_REP3,AEG588A6_S6_L003_R1_001.fastq.gz,
-TREATMENT_REP3,AEG588A6_S6_L004_R1_001.fastq.gz,
-```
-
-| Column    | Description                                                                                                                                                                            |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sample`  | Custom sample name. This entry will be identical for multiple sequencing libraries/runs from the same sample. Spaces in sample names are automatically converted to underscores (`_`). |
-| `fastq_1` | Full path to FastQ file for Illumina short reads 1. File has to be gzipped and have the extension ".fastq.gz" or ".fq.gz".                                                             |
-| `fastq_2` | Full path to FastQ file for Illumina short reads 2. File has to be gzipped and have the extension ".fastq.gz" or ".fq.gz".                                                             |
-
-An [example samplesheet](../assets/samplesheet.csv) has been provided with the pipeline.
+The reference FASTA, FASTA index, sequence dictionary, panel BED, and GATK resource directory must exist when the pipeline is run.
 
 ## Running the pipeline
 
-The typical command for running the pipeline is as follows:
+A typical run is:
 
 ```bash
-nextflow run inpred/tso500_v2_reference_preparation --input ./samplesheet.csv --outdir ./results  -profile docker
+nextflow run inpred/tso500_v2_reference_preparation \
+    -profile docker \
+    --input /absolute/path/samplesheet.csv \
+    --panel_bed /absolute/path/panel.bed \
+    --reference /absolute/path/reference.fa \
+    --reference_fai /absolute/path/reference.fa.fai \
+    --reference_dict /absolute/path/reference.fa.dict \
+    --gatk4_resources /absolute/path/gatk4_resources \
+    --gatk4_resource_labels '--resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap.vcf.gz;--resource:omni,known=false,training=true,truth=false,prior=12.0 omni.vcf.gz;--resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G.vcf.gz;--resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp.vcf.gz' \
+    --outdir /absolute/path/results
 ```
 
-This will launch the pipeline with the `docker` configuration profile. See below for more information about profiles.
+This will launch the pipeline with the `docker` configuration profile.
 
 Note that the pipeline will create the following files in your working directory:
 
@@ -85,8 +96,18 @@ nextflow run inpred/tso500_v2_reference_preparation -profile docker -params-file
 with:
 
 ```yaml title="params.yaml"
-input: './samplesheet.csv'
-outdir: './results/'
+input: "/absolute/path/samplesheet.csv"
+panel_bed: "/absolute/path/panel.bed"
+reference: "/absolute/path/reference.fa"
+reference_fai: "/absolute/path/reference.fa.fai"
+reference_dict: "/absolute/path/reference.fa.dict"
+gatk4_resources: "/absolute/path/gatk4_resources"
+gatk4_resource_labels: "--resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap.vcf.gz;--resource:omni,known=false,training=true,truth=false,prior=12.0 omni.vcf.gz;--resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G.vcf.gz;--resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp.vcf.gz"
+minimum_depth: 50
+minimum_size: 250
+standard_size: 400
+extension_limit: 250
+outdir: "/absolute/path/results"
 <...>
 ```
 
@@ -109,9 +130,6 @@ First, go to the [inpred/tso500_v2_reference_preparation releases page](https://
 This version number will be logged in reports when you run the pipeline, so that you'll know what you used when you look back in the future.
 
 To further assist in reproducibility, you can use share and reuse [parameter files](#running-the-pipeline) to repeat pipeline runs with the same settings without having to write out a command with every single parameter.
-
-> [!TIP]
-> If you wish to share such profile (such as upload as supplementary material for academic publications), make sure to NOT include cluster specific paths to files, nor institutional specific profiles.
 
 ## Core Nextflow arguments
 
