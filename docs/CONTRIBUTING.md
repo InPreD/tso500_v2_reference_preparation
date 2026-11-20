@@ -19,7 +19,7 @@ This page describes the recommended nf-core way to contribute to both inpred/tso
 
 To contribute code to any nf-core pipeline:
 
-- [ ] Ensure you have Nextflow, nf-core tools, and nf-test installed. See the [nf-core/tools repository](https://github.com/nf-core/tools) for instructions.
+- [ ] Ensure you have Nextflow and nf-core tools installed. See the [nf-core/tools repository](https://github.com/nf-core/tools) for instructions.
 - [ ] Check whether a GitHub [issue](https://github.com/inpred/tso500_v2_reference_preparation/issues) about your idea already exists. If an issue does not exist, create one so that others are aware you are working on it.
 - [ ] [Fork](https://help.github.com/en/github/getting-started-with-github/fork-a-repo) the [inpred/tso500_v2_reference_preparation repository](https://github.com/inpred/tso500_v2_reference_preparation) to your GitHub account.
 - [ ] Create a branch on your forked repository and make your changes following [pipeline conventions](#pipeline-contribution-conventions) (if applicable).
@@ -29,28 +29,7 @@ To contribute code to any nf-core pipeline:
 - [ ] [Lint](#lint-tests) your code with nf-core/tools.
 - [ ] Submit a pull request (PR) against the `dev` branch and request a review.
 
-If you are not used to this workflow with Git, see the [GitHub documentation](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests) or [Git resources](https://try.github.io/) for more information.
-
-### Testing
-
-Once you have made your changes, run the pipeline with nf-test to test them locally.
-For additional information, use the `--verbose` flag to view the Nextflow console log output.
-
-```bash
-nf-test test --tag test --profile +docker --verbose
-```
-
-If you have added new functionality, ensure you update the test assertions in the `.nf.test` files in the `tests/` directory.
-Update the snapshots with the following command:
-
-```bash
-nf-test test --tag test --profile +docker --verbose --update-snapshots
-```
-
-When you create a pull request with changes, GitHub Actions will run automatic tests.
-Pull requests are typically reviewed when these tests are passing.
-
-Two types of tests are typically run:
+If you are not used to this workflow with Git, see the [GitHub documentation](https://learn.github.com/product-guides/github-enterprise/get-started/pull-requests-and-collaborative-development) or [Git resources](https://try.github.io/) for more information.
 
 #### Lint tests
 
@@ -107,8 +86,7 @@ To update the minimum required Nextflow version, see the [Nextflow version bumpi
 
 Use the following naming schemes for channels to make the channel flow easier to understand:
 
-- Initial process channel: `ch_output_from_<process>`
-- Intermediate and terminal channels: `ch_<previousprocess>_for_<nextprocess>`
+- Process input channels: `ch_<process>_input{_number}`
 
 #### Default parameter values
 
@@ -146,7 +124,3 @@ nf-core pipelines bump-version --nextflow . <min_nf_version>
 #### Images and figures guidelines
 
 If you update images or graphics, follow the nf-core [style guidelines](https://nf-co.re/docs/community/brand/workflow-schematics).
-
-## Pipeline specific contribution guidelines
-
-<!-- TODO nf-core: Add any pipeline specific contribution guidelines here, such as coding styles, procedures, checklists etc. -->
